@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"/modules/config"
+	"goadminapi/modules/config"
 )
 
 type Mysql struct {
@@ -15,7 +15,9 @@ type Mysql struct {
 // Connection的方法
 func GetMysqlDB() *Mysql {
 	return &Mysql{
-		DbList: make(map[string]*sql.DB),
+		Base: Base{
+			DbList: make(map[string]*sql.DB),
+		},
 	}
 }
 

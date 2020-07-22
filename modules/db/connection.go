@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"goadminapi/modules/config"
 	"strings"
 )
 
@@ -23,7 +24,7 @@ type Connection interface {
 
 	// InitDB initialize the database connections.
 	// 初始化資料庫連接
-	InitDB(cfg map[string]Database) Connection
+	InitDB(cfg map[string]config.Database) Connection
 
 	// GetName get the connection name.
 	Name() string
