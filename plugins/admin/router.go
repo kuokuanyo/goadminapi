@@ -9,5 +9,6 @@ func (admin *Admin) initRouter() *Admin {
 
 	route.POST("/signin", admin.handler.Auth)
 
+	admin.App = app
 	return admin
 }

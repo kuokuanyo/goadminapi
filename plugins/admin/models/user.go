@@ -1,8 +1,12 @@
 package models
 
 import (
+	"goadminapi/modules/config"
 	"goadminapi/modules/db"
 	"goadminapi/modules/db/dialect"
+	"net/url"
+	"regexp"
+	"strings"
 )
 
 type UserModel struct {
@@ -31,6 +35,14 @@ func User(tablename string) UserModel {
 func (t UserModel) SetConn(con db.Connection) UserModel {
 	t.Conn = con
 	return t
+}
+
+// 透過參數(id)取得UserModel(struct)，將值設置至UserModel
+func (t UserModel) Find(id interface{}) UserModel {
+	// 藉由id取的符合資料
+	item, _ := t.Table(t.TableName).Find(id)
+	// 將取得的值(參數item)設置usermodel從map中
+	return t.MapToModel(item)
 }
 
 // 透過參數username尋找符合的資料並設置至UserModel
@@ -135,6 +147,117 @@ func (t UserModel) WithPermissions() UserModel {
 	return t
 }
 
+// 取得參數
+func getParam(u string) (string, url.Values) {
+	m := make(url.Values)
+	urr := strings.Split(u, "?")
+	if len(urr) > 1 {
+		m, _ = url.ParseQuery(urr[1])
+	}
+	return urr[0], m
+}
+
+func checkParam(src, comp url.Values) bool {
+	if len(comp) == 0 {
+		return true
+	}
+	if len(src) == 0 {
+		return false
+	}
+	for key, value := range comp {
+		v, find := src[key]
+		if !find {
+			return false
+		}
+		if len(value) == 0 {
+			continue
+		}
+		if len(v) == 0 {
+			return false
+		}
+		for i := 0; i < len(v); i++ {
+			if v[i] == value[i] {
+				continue
+			} else {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func inMethodArr(arr []string, str string) bool {
+	for i := 0; i < len(arr); i++ {
+		if strings.EqualFold(arr[i], str) {
+			return true
+		}
+	}
+	return false
+}
+
+// 檢查權限(藉由url、method)
+func (t UserModel) CheckPermissionByUrlMethod(path, method string, formParams url.Values) bool {
+	// 檢查是否為超級管理員
+	if t.IsSuperAdmin() {
+		return true
+	}
+	// 登出檢查
+	logoutCheck, _ := regexp.Compile(config.Url("/logout") + "(.*?)")
+	if logoutCheck.MatchString(path) {
+		return true
+	}
+
+	if path == "" {
+		return false
+	}
+	if path != "/" && path[len(path)-1] == '/' {
+		path = path[:len(path)-1]
+	}
+
+	path = strings.Replace(path, "_edit_pk", "id", -1)
+	path = strings.Replace(path, "_detail_pk", "id", -1)
+
+	// 取得路徑及參數
+	path, params := getParam(path)
+	for key, value := range formParams {
+		if len(value) > 0 {
+			params.Add(key, value[0])
+		}
+	}
+
+	for _, v := range t.Permissions {
+		if v.HttpMethod[0] == "" || inMethodArr(v.HttpMethod, method) {
+
+			if v.HttpPath[0] == "*" {
+				return true
+			}
+
+			for i := 0; i < len(v.HttpPath); i++ {
+
+				matchPath := config.Url(strings.TrimSpace(v.HttpPath[i]))
+				matchPath, matchParam := getParam(matchPath)
+				if matchPath == path {
+					if checkParam(params, matchParam) {
+						return true
+					}
+				}
+
+				reg, err := regexp.Compile(matchPath)
+				if err != nil {
+					continue
+				}
+
+				if reg.FindString(path) == path {
+					if checkParam(params, matchParam) {
+						return true
+					}
+				}
+			}
+		}
+	}
+	return false
+}
+
 // 取得可用menu
 func (t UserModel) WithMenus() UserModel {
 
@@ -177,6 +300,11 @@ func (t UserModel) WithMenus() UserModel {
 	return t
 }
 
+// 檢查用戶是否有可訪問的menu
+func (t UserModel) HasMenu() bool {
+	return len(t.MenuIds) != 0 || t.IsSuperAdmin()
+}
+
 // 將參數password設置至UserModel.UserModel並且更新dialect.H{"password": password,}
 func (t UserModel) UpdatePwd(password string) UserModel {
 
@@ -215,5 +343,11 @@ func (t UserModel) MapToModel(m map[string]interface{}) UserModel {
 	t.RememberToken, _ = m["remember_token"].(string)
 	t.CreatedAt, _ = m["created_at"].(string)
 	t.UpdatedAt, _ = m["updated_at"].(string)
+	return t
+}
+
+// 設置UserModel.Conn = nil後回傳UserModel
+func (t UserModel) ReleaseConn() UserModel {
+	t.Conn = nil
 	return t
 }

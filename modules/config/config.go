@@ -1,9 +1,20 @@
 package config
 
-import "html/template"
+import (
+	"fmt"
+	"goadminapi/modules/utils"
+	"html/template"
+	"strconv"
+	"sync"
+	"sync/atomic"
+)
 
 var (
 	globalCfg = new(Config)
+	declare   sync.Once
+	updateLock sync.Mutex
+	lock      sync.Mutex
+	count     uint32
 )
 
 type Config struct {
@@ -24,7 +35,7 @@ type Config struct {
 	UrlPrefix string `json:"prefix,omitempty" yaml:"prefix,omitempty" ini:"prefix,omitempty"`
 
 	// The theme name of template.
-	Theme string `json:"theme,omitempty" yaml:"theme,omitempty" ini:"theme,omitempty"`
+	// Theme string `json:"theme,omitempty" yaml:"theme,omitempty" ini:"theme,omitempty"`
 
 	// The path where files will be stored into.
 	Store Store `json:"store,omitempty" yaml:"store,omitempty" ini:"store,omitempty"`
@@ -52,10 +63,30 @@ type Config struct {
 	// Limit login with different IPs
 	NoLimitLoginIP bool `json:"no_limit_login_ip,omitempty" yaml:"no_limit_login_ip,omitempty" ini:"no_limit_login_ip,omitempty"`
 
+	// Login page title
+	LoginTitle string `json:"login_title,omitempty" yaml:"login_title,omitempty" ini:"login_title,omitempty"`
+
+	// Login page logo
+	LoginLogo template.HTML `json:"login_logo,omitempty" yaml:"login_logo,omitempty" ini:"login_logo,omitempty"`
+
+	// File upload engine,default "local"
+	// FileUploadEngine FileUploadEngine `json:"file_upload_engine,omitempty" yaml:"file_upload_engine,omitempty" ini:"file_upload_engine,omitempty"`
+
+	// Auth user table
+	AuthUserTable string `json:"auth_user_table,omitempty" yaml:"auth_user_table,omitempty" ini:"auth_user_table,omitempty"`
+
+	// Debug mode
+	Debug bool `json:"debug,omitempty" yaml:"debug,omitempty" ini:"debug,omitempty"`
 }
 
 // DatabaseList is a map of Database.
 type DatabaseList map[string]Database
+
+// 文件上傳引擎
+type FileUploadEngine struct {
+	Name   string                 `json:"name,omitempty" yaml:"name,omitempty" ini:"name,omitempty"`
+	Config map[string]interface{} `json:"config,omitempty" yaml:"config,omitempty" ini:"config,omitempty"`
+}
 
 type Store struct {
 	Path   string `json:"path,omitempty" yaml:"path,omitempty" ini:"path,omitempty"`
@@ -76,12 +107,99 @@ type Database struct {
 	Params     map[string]string `json:"params,omitempty" yaml:"params,omitempty" ini:"params,omitempty"`
 }
 
+// 設置Config(struct)title、theme、登入url、前綴url...資訊，如果參數cfg(struct)有些數值為空值，設置預設值
+// 最後回傳globalCfg
+func Set(cfg Config) *Config {
+
+	lock.Lock()
+	defer lock.Unlock()
+
+	// 不能設置config兩次
+	if atomic.LoadUint32(&count) != 0 {
+		panic("can not set config twice")
+	}
+	atomic.StoreUint32(&count, 1)
+
+	cfg = SetDefault(cfg)
+
+	//global url前綴
+	if cfg.UrlPrefix == "" {
+		cfg.prefix = "/"
+	} else if cfg.UrlPrefix[0] != '/' {
+		cfg.prefix = "/" + cfg.UrlPrefix
+	} else {
+		cfg.prefix = cfg.UrlPrefix
+	}
+
+	// 紀錄器(cfg)初始化
+	// initLogger(cfg)
+
+	// if cfg.SqlLog {
+	// 	// 將logger(struct).sqlLogOpen設為true
+	// 	logger.OpenSQLLog()
+	// }
+
+	if cfg.Debug {
+		declare.Do(func() {
+			fmt.Println(`GoAdmin is now running.
+Running in "debug" mode. Switch to "release" mode in production.`)
+			fmt.Println("----------------------------")
+		})
+	}
+
+	globalCfg = &cfg
+
+	return globalCfg
+}
+
+// 如果參數cfg(struct)有些數值為空值，設置預設值
+func SetDefault(cfg Config) Config {
+	// SetDefault假設第一個參數 = 第二個參數回傳第三個參數，沒有的話回傳第一個參數
+	cfg.Title = utils.SetDefault(cfg.Title, "", "Orange")
+	cfg.LoginTitle = utils.SetDefault(cfg.LoginTitle, "", "Orange")
+	cfg.Logo = template.HTML(utils.SetDefault(string(cfg.Logo), "", "<b>Go</b>Orange"))
+	cfg.MiniLogo = template.HTML(utils.SetDefault(string(cfg.MiniLogo), "", "<b>O</b>O"))
+	// cfg.Theme = utils.SetDefault(cfg.Theme, "", "adminlte")
+	cfg.IndexUrl = utils.SetDefault(cfg.IndexUrl, "", "/info/manager")
+	cfg.LoginUrl = utils.SetDefault(cfg.LoginUrl, "", "/login")
+	cfg.AuthUserTable = utils.SetDefault(cfg.AuthUserTable, "", "users")
+	// if cfg.Theme == "adminlte" {
+	// 	cfg.ColorScheme = utils.SetDefault(cfg.ColorScheme, "", "skin-black")
+	// }
+	// cfg.FileUploadEngine.Name = utils.SetDefault(cfg.FileUploadEngine.Name, "", "local")
+	// cfg.Env = utils.SetDefault(cfg.Env, "", EnvProd)
+	if cfg.SessionLifeTime == 0 {
+		// default two hours
+		cfg.SessionLifeTime = 7200
+	}
+	return cfg
+}
+
 // 取得預設資料庫DatabaseList["default"]的值
 func (d DatabaseList) GetDefault() Database {
 	return d["default"]
 }
 
-// 將globalCfg.Databases[key]的driver值設置至DatabaseList(map[string]Database).Database.Driver
+// 將參數key、db設置至DatabaseList(map[string]Database)
+func (d DatabaseList) Add(key string, db Database) {
+	d[key] = db
+}
+
+// 將資料庫依照資料庫引擎分組(ex:mysql一組mssql一組)
+func (d DatabaseList) GroupByDriver() map[string]DatabaseList {
+	drivers := make(map[string]DatabaseList)
+	for key, item := range d {
+		if driverList, ok := drivers[item.Driver]; ok {
+			driverList.Add(key, item)
+		} else {
+			drivers[item.Driver] = make(DatabaseList)
+			drivers[item.Driver].Add(key, item)
+		}
+	}
+	return drivers
+}
+
+// 將所有globalCfg.Databases[key]的driver值設置至DatabaseList(map[string]Database).Database.Driver後回傳
 func GetDatabases() DatabaseList {
 	var list = make(DatabaseList, len(globalCfg.Databases))
 	for key := range globalCfg.Databases {
@@ -90,6 +208,14 @@ func GetDatabases() DatabaseList {
 		}
 	}
 	return list
+}
+
+// 將參數s轉換成Service(struct)並回傳Service.C(Config struct)
+func GetService(s interface{}) *Config {
+	if srv, ok := s.(*Service); ok {
+		return srv.C
+	}
+	panic("wrong service")
 }
 
 // 取得Config.IndexUrl
@@ -117,6 +243,46 @@ func (c *Config) GetIndexURL() string {
 	}
 
 	return c.Prefix() + index
+}
+
+// 將參數suffix(後綴)與Config.prefix(前綴)處理後回傳
+func (c *Config) Url(suffix string) string {
+	if c.prefix == "/" {
+		return suffix
+	}
+	if suffix == "/" {
+		return c.prefix
+	}
+	return c.prefix + suffix
+}
+
+// 處理URL
+func (s Store) URL(suffix string) string {
+	if len(suffix) > 4 && suffix[:4] == "http" {
+		return suffix
+	}
+	if s.Prefix == "" {
+		if suffix[0] == '/' {
+			return suffix
+		}
+		return "/" + suffix
+	}
+	if s.Prefix[0] == '/' {
+		if suffix[0] == '/' {
+			return s.Prefix + suffix
+		}
+		return s.Prefix + "/" + suffix
+	}
+	if suffix[0] == '/' {
+		if len(s.Prefix) > 4 && s.Prefix[:4] == "http" {
+			return s.Prefix + suffix
+		}
+		return "/" + s.Prefix + suffix
+	}
+	if len(s.Prefix) > 4 && s.Prefix[:4] == "http" {
+		return s.Prefix + "/" + suffix
+	}
+	return "/" + s.Prefix + "/" + suffix
 }
 
 func (d Database) ParamStr() string {
@@ -160,6 +326,25 @@ func (d Database) ParamStr() string {
 	return p
 }
 
+// 取得globalCfg.LoginUrl
+func GetLoginUrl() string {
+	return globalCfg.LoginUrl
+}
+
+// 將globalCfg.suffix(後綴)與globalCfg.prefix(前綴)處理後回傳
+func Url(suffix string) string {
+	return globalCfg.Url(suffix)
+}
+
+func GetStore() Store {
+	return globalCfg.Store
+}
+
+// globalCfg.Debug
+func GetDebug() bool {
+	return globalCfg.Debug
+}
+
 func GetDomain() string {
 	return globalCfg.Domain
 }
@@ -170,4 +355,202 @@ func GetNoLimitLoginIP() bool {
 
 func GetSessionLifeTime() int {
 	return globalCfg.SessionLifeTime
+}
+
+// 將DatabaseList(map[string]Database)JSON編碼
+func (d DatabaseList) JSON() string {
+	return utils.JSON(d)
+}
+
+// 將Store(struct)JSON編碼
+func (s Store) JSON() string {
+	if s.Path == "" && s.Prefix == "" {
+		return ""
+	}
+	return utils.JSON(s)
+}
+
+type Service struct {
+	C *Config
+}
+
+// 回傳config(string)
+func (s *Service) Name() string {
+	return "config"
+}
+
+// 將參數c設置並回傳Service(struct)
+func SrvWithConfig(c *Config) *Service {
+	return &Service{c}
+}
+
+// 將Config的值設置至map[string]string
+func (c *Config) ToMap() map[string]string {
+	var m = make(map[string]string, 0)
+	m["language"] = c.Language
+	m["databases"] = c.Databases.JSON()
+	m["domain"] = c.Domain
+	m["url_prefix"] = c.UrlPrefix
+	// m["theme"] = c.Theme
+	m["store"] = c.Store.JSON()
+	m["title"] = c.Title
+	m["logo"] = string(c.Logo)
+	m["mini_logo"] = string(c.MiniLogo)
+	m["index_url"] = c.IndexUrl
+	// m["site_off"] = strconv.FormatBool(c.SiteOff)
+	m["login_url"] = c.LoginUrl
+	m["debug"] = strconv.FormatBool(c.Debug)
+	// m["env"] = c.Env
+
+	// Logger config
+	// ========================
+
+	// m["info_log_path"] = c.InfoLogPath
+	// m["error_log_path"] = c.ErrorLogPath
+	// m["access_log_path"] = c.AccessLogPath
+	// m["sql_log"] = strconv.FormatBool(c.SqlLog)
+	// m["access_log_off"] = strconv.FormatBool(c.AccessLogOff)
+	// m["info_log_off"] = strconv.FormatBool(c.InfoLogOff)
+	// m["error_log_off"] = strconv.FormatBool(c.ErrorLogOff)
+	// m["access_assets_log_off"] = strconv.FormatBool(c.AccessAssetsLogOff)
+
+	// m["logger_rotate_max_size"] = strconv.Itoa(c.Logger.Rotate.MaxSize)
+	// m["logger_rotate_max_backups"] = strconv.Itoa(c.Logger.Rotate.MaxBackups)
+	// m["logger_rotate_max_age"] = strconv.Itoa(c.Logger.Rotate.MaxAge)
+	// m["logger_rotate_compress"] = strconv.FormatBool(c.Logger.Rotate.Compress)
+
+	// m["logger_encoder_time_key"] = c.Logger.Encoder.TimeKey
+	// m["logger_encoder_level_key"] = c.Logger.Encoder.LevelKey
+	// m["logger_encoder_name_key"] = c.Logger.Encoder.NameKey
+	// m["logger_encoder_caller_key"] = c.Logger.Encoder.CallerKey
+	// m["logger_encoder_message_key"] = c.Logger.Encoder.MessageKey
+	// m["logger_encoder_stacktrace_key"] = c.Logger.Encoder.StacktraceKey
+	// m["logger_encoder_level"] = c.Logger.Encoder.Level
+	// m["logger_encoder_time"] = c.Logger.Encoder.Time
+	// m["logger_encoder_duration"] = c.Logger.Encoder.Duration
+	// m["logger_encoder_caller"] = c.Logger.Encoder.Caller
+	// m["logger_encoder_encoding"] = c.Logger.Encoder.Encoding
+	// m["logger_level"] = strconv.Itoa(int(c.Logger.Level))
+
+	// m["color_scheme"] = c.ColorScheme
+	m["session_life_time"] = strconv.Itoa(c.SessionLifeTime)
+	// m["asset_url"] = c.AssetUrl
+	// m["file_upload_engine"] = c.FileUploadEngine.JSON()
+	// m["custom_head_html"] = string(c.CustomHeadHtml)
+	// m["custom_foot_html"] = string(c.CustomFootHtml)
+	// m["custom_404_html"] = string(c.Custom404HTML)
+	// m["custom_403_html"] = string(c.Custom403HTML)
+	// m["custom_500_html"] = string(c.Custom500HTML)
+	// m["footer_info"] = string(c.FooterInfo)
+	m["login_title"] = c.LoginTitle
+	m["login_logo"] = string(c.LoginLogo)
+	m["auth_user_table"] = c.AuthUserTable
+	// if len(c.Extra) == 0 {
+	// 	m["extra"] = ""
+	// } else {
+	// 	m["extra"] = utils.JSON(c.Extra)
+	// }
+
+	// m["animation_type"] = c.Animation.Type
+	// m["animation_duration"] = fmt.Sprintf("%.2f", c.Animation.Duration)
+	// m["animation_delay"] = fmt.Sprintf("%.2f", c.Animation.Delay)
+
+	m["no_limit_login_ip"] = strconv.FormatBool(c.NoLimitLoginIP)
+
+	// m["hide_config_center_entrance"] = strconv.FormatBool(c.HideConfigCenterEntrance)
+	// m["hide_app_info_entrance"] = strconv.FormatBool(c.HideAppInfoEntrance)
+	// m["hide_tool_entrance"] = strconv.FormatBool(c.HideToolEntrance)
+
+	return m
+}
+
+// 將參數m(map[string]string)的值更新至Config(struct)
+func (c *Config) Update(m map[string]string) error {
+	updateLock.Lock()
+	defer updateLock.Unlock()
+	c.Language = m["language"]
+	c.Domain = m["domain"]
+	// c.Theme = m["theme"]
+	c.Title = m["title"]
+	c.Logo = template.HTML(m["logo"])
+	c.MiniLogo = template.HTML(m["mini_logo"])
+	// c.Debug = utils.ParseBool(m["debug"])
+	// c.Env = m["env"]
+	// c.SiteOff = utils.ParseBool(m["site_off"])
+
+	// c.AccessLogOff = utils.ParseBool(m["access_log_off"])
+	// c.InfoLogOff = utils.ParseBool(m["info_log_off"])
+	// c.ErrorLogOff = utils.ParseBool(m["error_log_off"])
+	// c.AccessAssetsLogOff = utils.ParseBool(m["access_assets_log_off"])
+
+	// if c.InfoLogPath != m["info_log_path"] {
+	// 	c.InfoLogPath = m["info_log_path"]
+	// }
+	// if c.ErrorLogPath != m["error_log_path"] {
+	// 	c.ErrorLogPath = m["error_log_path"]
+	// }
+	// if c.AccessLogPath != m["access_log_path"] {
+	// 	c.AccessLogPath = m["access_log_path"]
+	// }
+	// c.SqlLog = utils.ParseBool(m["sql_log"])
+
+	// c.Logger.Rotate.MaxSize, _ = strconv.Atoi(m["logger_rotate_max_size"])
+	// c.Logger.Rotate.MaxBackups, _ = strconv.Atoi(m["logger_rotate_max_backups"])
+	// c.Logger.Rotate.MaxAge, _ = strconv.Atoi(m["logger_rotate_max_age"])
+	// c.Logger.Rotate.Compress = utils.ParseBool(m["logger_rotate_compress"])
+
+	// c.Logger.Encoder.Encoding = m["logger_encoder_encoding"]
+	// loggerLevel, _ := strconv.Atoi(m["logger_level"])
+	// c.Logger.Level = int8(loggerLevel)
+
+	// if c.Logger.Encoder.Encoding == "json" {
+	// 	c.Logger.Encoder.TimeKey = m["logger_encoder_time_key"]
+	// 	c.Logger.Encoder.LevelKey = m["logger_encoder_level_key"]
+	// 	c.Logger.Encoder.NameKey = m["logger_encoder_name_key"]
+	// 	c.Logger.Encoder.CallerKey = m["logger_encoder_caller_key"]
+	// 	c.Logger.Encoder.MessageKey = m["logger_encoder_message_key"]
+	// 	c.Logger.Encoder.StacktraceKey = m["logger_encoder_stacktrace_key"]
+	// 	c.Logger.Encoder.Level = m["logger_encoder_level"]
+	// 	c.Logger.Encoder.Time = m["logger_encoder_time"]
+	// 	c.Logger.Encoder.Duration = m["logger_encoder_duration"]
+	// 	c.Logger.Encoder.Caller = m["logger_encoder_caller"]
+	// }
+
+	// initLogger(*c)
+
+	// if c.Theme == "adminlte" {
+	// 	c.ColorScheme = m["color_scheme"]
+	// }
+	ses, _ := strconv.Atoi(m["session_life_time"])
+	if ses != 0 {
+		c.SessionLifeTime = ses
+	}
+	// c.CustomHeadHtml = template.HTML(m["custom_head_html"])
+	// c.CustomFootHtml = template.HTML(m["custom_foot_html"])
+	// c.Custom404HTML = template.HTML(m["custom_404_html"])
+	// c.Custom403HTML = template.HTML(m["custom_403_html"])
+	// c.Custom500HTML = template.HTML(m["custom_500_html"])
+	// c.FooterInfo = template.HTML(m["footer_info"])
+	c.LoginTitle = m["login_title"]
+	// c.AssetUrl = m["asset_url"]
+	c.LoginLogo = template.HTML(m["login_logo"])
+	// c.NoLimitLoginIP = utils.ParseBool(m["no_limit_login_ip"])
+
+	// c.HideConfigCenterEntrance = utils.ParseBool(m["hide_config_center_entrance"])
+	// c.HideAppInfoEntrance = utils.ParseBool(m["hide_app_info_entrance"])
+	// c.HideToolEntrance = utils.ParseBool(m["hide_tool_entrance"])
+
+	// c.FileUploadEngine = GetFileUploadEngineFromJSON(m["file_upload_engine"])
+
+	// c.Animation.Type = m["animation_type"]
+	// c.Animation.Duration = utils.ParseFloat32(m["animation_duration"])
+	// c.Animation.Delay = utils.ParseFloat32(m["animation_delay"])
+
+	// if m["extra"] != "" {
+	// 	var extra = make(map[string]interface{}, 0)
+	// 	_ = json.Unmarshal([]byte(m["extra"]), &extra)
+	// 	c.Extra = extra
+	// }
+
+	return nil
 }

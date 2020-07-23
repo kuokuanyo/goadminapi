@@ -3,10 +3,12 @@ package db
 import (
 	"database/sql"
 	"goadminapi/modules/config"
+	"goadminapi/modules/service"
 	"strings"
 )
 
 // 資料庫連接的處理程序
+// Connection也屬於Service(interface)
 type Connection interface {
 	// 查詢
 	Query(query string, args ...interface{}) ([]map[string]interface{}, error)
@@ -41,6 +43,7 @@ type Connection interface {
 func GetConnectionByDriver(driver string) Connection {
 	switch driver {
 	case "mysql":
+		// 取得*Mysql(struct)，也屬於Connection(interface)
 		return GetMysqlDB()
 	// case "mssql":
 	// 	return GetMssqlDB()
@@ -51,6 +54,14 @@ func GetConnectionByDriver(driver string) Connection {
 	default:
 		panic("driver not found!")
 	}
+}
+
+// 將參數srv轉換為Connection(interface)回傳並回傳
+func GetConnectionFromService(srv interface{}) Connection {
+	if v, ok := srv.(Connection); ok {
+		return v
+	}
+	panic("wrong service")
 }
 
 const (
@@ -96,4 +107,16 @@ func CheckError(err error, t int) bool {
 		}
 	}
 	return true
+}
+
+// 透過資料庫引擎取得匹配的Service然後轉換成Connection(interface)類別
+func GetConnection(srvs service.List) Connection {
+	// service.List類別為map[string]Service，Service是interface(Name方法)
+	// 將所有globalCfg.Databases[key]的driver值設置至DatabaseList(map[string]Database).Database.Driver後回傳
+	// GetDefault取得預設資料庫DatabaseList["default"]的值
+	// Get透過資料庫driver取得Service(interface)，Get裡的參數ex:mysql...
+	if v, ok := srvs.Get(config.GetDatabases().GetDefault().Driver).(Connection); ok {
+		return v
+	}
+	panic("wrong service")
 }

@@ -49,7 +49,7 @@ func (driver *DBDriver) table() *db.SQL {
 }
 
 // DBDriver也是PersistenceDriver(interface)
-// 尋找資料表中符合參數(sid)的user資料，將資料的values欄位值JSON解碼並回傳values
+// 尋找資料表中符合參數(sid)的user資料，將資料表values欄位值(ex:{"user_id":1})JSON解碼並回傳values
 func (driver *DBDriver) Load(sid string) (map[string]interface{}, error) {
 	// table取得sql(struct)
 	// 取得user(透過sid尋找符合資料)
@@ -195,6 +195,14 @@ func (ses *Session) UseDriver(driver PersistenceDriver) {
 func (ses *Session) UpdateConfig(config Config) {
 	ses.Expires = config.Expires
 	ses.Cookie = config.Cookie
+}
+
+// 尋找資料表中符合參數(sesKey)的user資料，回傳user_id
+func GetSessionByKey(sesKey, key string, conn db.Connection) (interface{}, error) {
+	// newDBDriver將參數(conn)設置並回傳DBDriver(struct)
+	// 尋找資料表中符合參數(sesKey)的user資料，將資料表values欄位值(ex:{"user_id":1})JSON解碼並回傳values
+	m, err := newDBDriver(conn).Load(sesKey)
+	return m[key], err
 }
 
 // 取得cookie並設置值，接著設定Session(struct)資訊，將參數ctx設置至Session.Context

@@ -71,6 +71,26 @@ func NewApp() *App {
 	}
 }
 
+// 設置新Context(struct)，將參數(req)設置至Context.Request
+func NewContext(req *http.Request) *Context {
+
+	return &Context{
+		Request:   req,
+		UserValue: make(map[string]interface{}),
+		Response: &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     make(http.Header),
+		},
+		index: -1,
+	}
+}
+
+// 將參數(handlers)設置至至Context.Handlers
+func (ctx *Context) SetHandlers(handlers Handlers) *Context {
+	ctx.handlers = handlers
+	return ctx
+}
+
 // 將參數設置至App.Routers(RouterMap)中，設定methods及patten(url)
 func (app *App) Name(name string) {
 	if app.routeANY {
@@ -94,6 +114,16 @@ func (app *App) Group(prefix string, middleware ...Handler) *RouterGroup {
 		app:         app,
 		Middlewares: append(app.Middlewares, middleware...),
 		Prefix:      slash(prefix),
+	}
+}
+
+// 執行迴圈Context.handlers[ctx.index](ctx)
+func (ctx *Context) Next() {
+	ctx.index++
+	// Context.Handlers類別為[]Handler，Handler類別為func(ctx *Context)
+	for s := int8(len(ctx.handlers)); ctx.index < s; ctx.index++ {
+		// 執行func(ctx *Context)
+		ctx.handlers[ctx.index](ctx)
 	}
 }
 

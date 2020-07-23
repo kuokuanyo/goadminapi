@@ -76,6 +76,11 @@ func (sql *SQL) Select(fields ...string) *SQL {
 	return sql
 }
 
+// 藉由id取的符合資料
+func (sql *SQL) Find(arg interface{}) (map[string]interface{}, error) {
+	return sql.Where("id", "=", arg).First()
+}
+
 // 插入給定的參數資料(values(map[string]interface{}))後，最後回傳加入值的id
 func (sql *SQL) Insert(values dialect.H) (int64, error) {
 	// 清空的sql 資訊放入SQLPool中

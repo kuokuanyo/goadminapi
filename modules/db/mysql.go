@@ -12,7 +12,7 @@ type Mysql struct {
 	Base
 }
 
-// Connection的方法
+// Mysql(struct)也屬於Connection的方法
 func GetMysqlDB() *Mysql {
 	return &Mysql{
 		Base: Base{
@@ -33,24 +33,20 @@ func (db *Mysql) GetDelimiter() string {
 func (db *Mysql) InitDB(cfgs map[string]config.Database) Connection {
 	db.Once.Do(func() {
 		for conn, cfg := range cfgs {
-
 			if cfg.Dsn == "" {
 				cfg.Dsn = cfg.User + ":" + cfg.Pwd + "@tcp(" + cfg.Host + ":" + cfg.Port + ")/" +
 					cfg.Name + cfg.ParamStr()
 			}
 
 			sqlDB, err := sql.Open("mysql", cfg.Dsn)
-
 			if err != nil {
 				if sqlDB != nil {
 					_ = sqlDB.Close()
 				}
 				panic(err)
 			} else {
-				// Largest set up the database connection reduce time wait
 				sqlDB.SetMaxIdleConns(cfg.MaxIdleCon)
 				sqlDB.SetMaxOpenConns(cfg.MaxOpenCon)
-
 				db.DbList[conn] = sqlDB
 			}
 			//啟動資料庫引擎

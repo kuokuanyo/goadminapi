@@ -3,10 +3,19 @@ package table
 import (
 	"context"
 	"goadminapi/modules/db"
+	"goadminapi/modules/service"
 	"goadminapi/plugins/admin/modules/form"
 	"goadminapi/plugins/admin/modules/parameter"
+	"sync"
+	"sync/atomic"
 
 	"goadminapi/template/types"
+)
+
+var (
+	services service.List
+	count    uint32
+	lock     sync.Mutex
 )
 
 type Generator func(ctx *context.Context) Table
@@ -89,4 +98,15 @@ func (g GeneratorList) CombineAll(gens []GeneratorList) GeneratorList {
 		}
 	}
 	return g
+}
+
+// 將參數(srv)設置給services(map[string]Service)
+func SetServices(srv service.List) {
+	lock.Lock()
+	defer lock.Unlock()
+
+	if atomic.LoadUint32(&count) != 0 {
+		panic("can not initialize twice")
+	}
+	services = srv
 }

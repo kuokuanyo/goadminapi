@@ -21,3 +21,41 @@ type Handler struct {
 	//navButtons    *types.Buttons
 	operationLock sync.Mutex
 }
+
+type Config struct {
+	Config     *c.Config
+	Services   service.List
+	Connection db.Connection
+	Generators table.GeneratorList
+}
+
+// 判斷參數cfg(長度是否大於0)後設置Handler(struct)並回傳
+func New(cfg ...Config) *Handler {
+	if len(cfg) == 0 {
+		return &Handler{
+			operations: make([]context.Node, 0),
+			// navButtons: new(types.Buttons),
+		}
+	}
+	return &Handler{
+		config:     cfg[0].Config,
+		services:   cfg[0].Services,
+		conn:       cfg[0].Connection,
+		generators: cfg[0].Generators,
+		operations: make([]context.Node, 0),
+		// navButtons: new(types.Buttons),
+	}
+}
+
+// 將參數(r)設置至Handler.routes
+func (h *Handler) SetRoutes(r context.RouterMap) {
+	h.routes = r
+}
+
+// 將參數cfg(struct)裡的值都設置至Handler(struct)
+func (h *Handler) UpdateCfg(cfg Config) {
+	h.config = cfg.Config
+	h.services = cfg.Services
+	h.conn = cfg.Connection
+	h.generators = cfg.Generators
+}
