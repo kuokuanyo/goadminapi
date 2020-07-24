@@ -55,3 +55,35 @@ func (h *Handler) Auth(ctx *context.Context) {
 	})
 	return
 }
+
+// ShowLogin判斷map[string]Component(interface)是否有參數login(key)的值，接著執行template將data寫入buf並輸出HTML
+// func (h *Handler) ShowLogin(ctx *context.Context) {
+
+// 	// GetComp判斷map[string]Component是否有參數name(login)的值，有的話則回傳Component(interface)
+// 	// GetTemplate為Component(interface)的方法
+// 	tmpl, name := template.GetComp("login").GetTemplate()
+// 	buf := new(bytes.Buffer)
+
+// 	// ExecuteTemplate為html/template套件
+// 	// 將第三個參數data寫入buf(struct)後輸出HTML
+// 	if err := tmpl.ExecuteTemplate(buf, name, struct {
+// 		UrlPrefix string
+// 		Title     string
+// 		Logo      template2.HTML
+// 		CdnUrl    string
+// 		System    types.SystemInfo
+// 	}{
+// 		UrlPrefix: h.config.AssertPrefix(),
+// 		Title:     h.config.LoginTitle,
+// 		Logo:      h.config.LoginLogo,
+// 		System: types.SystemInfo{
+// 			Version: system.Version(),
+// 		},
+// 		CdnUrl: h.config.AssetUrl,
+// 	}); err == nil {
+// 		ctx.HTML(http.StatusOK, buf.String())
+// 	} else {
+// 		logger.Error(err)
+// 		ctx.HTML(http.StatusOK, "parse template error (；′⌒`)")
+// 	}
+// }

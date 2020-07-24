@@ -13,13 +13,10 @@ import (
 // Admin也屬於Plugin(interface)所有方法
 type Admin struct {
 	*plugins.Base
-	// plugins\admin\modules\table\table.go
 	// GeneratorList類別為map[string]Generator，Generator類別為func(ctx *context.Context) Table
 	tableList table.GeneratorList
-	// plugins\admin\modules\guard
-	guardian *guard.Guard
-	// plugins\admin\controller
-	handler *controller.Handler
+	guardian  *guard.Guard
+	handler   *controller.Handler
 }
 
 // 設置Admin(struct)後回傳

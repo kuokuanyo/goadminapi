@@ -12,19 +12,16 @@ import (
 	"goadminapi/adapter"
 )
 
-// 預設的配飾器(adapter.WebFrameWork(interface))
 var defaultAdapter adapter.WebFrameWork
 var engine *Engine
 
 // 核心組件，有PluginList及Adapter兩個屬性
 type Engine struct {
-	// GetRequest回傳插件中的所有路徑
-	// InitPlugin初始化插件，類似於初始化資料庫並設置及配置路徑
 	PluginList []plugins.Plugin
 	Adapter    adapter.WebFrameWork
 	Services   service.List //Services類別為map[string]Service，Service為interface(Name方法)
 	NavButtons *types.Buttons
-	config     *config.Config //struct
+	config     *config.Config
 }
 
 // 建立引擎預設的配適器

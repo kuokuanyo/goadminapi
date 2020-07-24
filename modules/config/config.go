@@ -10,11 +10,11 @@ import (
 )
 
 var (
-	globalCfg = new(Config)
-	declare   sync.Once
+	globalCfg  = new(Config)
+	declare    sync.Once
 	updateLock sync.Mutex
-	lock      sync.Mutex
-	count     uint32
+	lock       sync.Mutex
+	count      uint32
 )
 
 type Config struct {
@@ -326,14 +326,18 @@ func (d Database) ParamStr() string {
 	return p
 }
 
-// 取得globalCfg.LoginUrl
+// 將globalCfg.suffix(後綴)與globalCfg.prefix(前綴)處理後回傳
+func Url(suffix string) string {
+	return globalCfg.Url(suffix)
+}
+
+// globalCfg.LoginUrl
 func GetLoginUrl() string {
 	return globalCfg.LoginUrl
 }
 
-// 將globalCfg.suffix(後綴)與globalCfg.prefix(前綴)處理後回傳
-func Url(suffix string) string {
-	return globalCfg.Url(suffix)
+func GetLanguage() string {
+	return globalCfg.Language
 }
 
 func GetStore() Store {
