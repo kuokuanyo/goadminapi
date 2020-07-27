@@ -8,6 +8,8 @@ import (
 	"goadminapi/modules/service"
 	"goadminapi/plugins/admin/modules/table"
 	"sync"
+
+	"goadminapi/template"
 )
 
 type Handler struct {
@@ -58,4 +60,11 @@ func (h *Handler) UpdateCfg(cfg Config) {
 	h.services = cfg.Services
 	h.conn = cfg.Connection
 	h.generators = cfg.Generators
+}
+
+// 判斷templateMap(map[string]Template)的key鍵是否參數globalCfg.Theme，有則回傳Template(interface)
+func aTemplate() template.Template {
+	// 判斷templateMap(map[string]Template)的key鍵是否參數globalCfg.Theme，有則回傳Template(interface)
+	// GetTheme return globalCfg.Theme
+	return template.Get(c.GetTheme())
 }

@@ -3,7 +3,6 @@ package main
 import (
 	"goadminapi/engine"
 	"goadminapi/modules/config"
-	"net/http"
 
 	_ "goadminapi/adapter/gin"
 
@@ -14,17 +13,7 @@ import (
 
 func main() {
 	r := gin.Default()
-	r.Static("/admin/assets", "./assets")
 
-
-	r.LoadHTMLGlob("template/**/*.html")
-	//r.LoadHTMLFiles("template/login/index.html")
-	r.GET("/admin/login", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "login.html", gin.H{
-			"UrlPrefix": "/admin",
-			"CdnUrl": "",
-		})
-	})
 	// 回傳預設的Engine(struct)
 	eng := engine.Default()
 

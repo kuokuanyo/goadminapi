@@ -65,3 +65,33 @@ const (
 	LayoutFlow
 	LayoutTab
 )
+
+// 判斷t(unit8)是否符合條件
+func (t Type) IsSelect() bool {
+	// Select = 3
+	// SelectSingle = 2
+	// SelectBox = 5
+	// Radio = 12
+	// Switch = 2
+	return t == Select || t == SelectSingle || t == SelectBox || t == Radio || t == Switch ||
+		t == Checkbox || t == CheckboxStacked || t == CheckboxSingle
+}
+
+func (l Layout) Col() int {
+	if l == LayoutTwoCol {
+		return 2
+	}
+	if l == LayoutThreeCol {
+		return 3
+	}
+	if l == LayoutFourCol {
+		return 4
+	}
+	if l == LayoutFiveCol {
+		return 5
+	}
+	if l == LayoutSixCol {
+		return 6
+	}
+	return 0
+}

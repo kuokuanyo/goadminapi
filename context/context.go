@@ -108,6 +108,11 @@ func (app *App) Name(name string) {
 	}
 }
 
+// 回傳Request url path
+func (ctx *Context) Path() string {
+	return ctx.Request.URL.Path
+}
+
 // 將參數prefix、middleware新增至RouterGroup(struct)
 func (app *App) Group(prefix string, middleware ...Handler) *RouterGroup {
 	return &RouterGroup{
@@ -152,6 +157,44 @@ func (ctx *Context) SetCookie(cookie *http.Cookie) {
 // 將參數添加至Content-Type
 func (ctx *Context) SetContentType(contentType string) {
 	ctx.AddHeader("Content-Type", contentType)
+}
+
+// 將參數設置至Context.Response.StatusCode
+func (ctx *Context) SetStatusCode(code int) {
+	ctx.Response.StatusCode = code
+}
+
+// 將狀態碼，標頭(header)及body寫入Context.Response
+func (ctx *Context) Write(code int, header map[string]string, Body string) {
+	ctx.Response.StatusCode = code
+	for key, head := range header {
+		// 加入header
+		ctx.AddHeader(key, head)
+	}
+	ctx.Response.Body = ioutil.NopCloser(strings.NewReader(Body))
+}
+
+// 將參數body保存至Context.response.Body中
+func (ctx *Context) WriteString(body string) {
+	ctx.Response.Body = ioutil.NopCloser(strings.NewReader(body))
+}
+
+// 將code, headers and body(參數)設置至在Context.Response中
+func (ctx *Context) DataWithHeaders(code int, header map[string]string, data []byte) {
+	ctx.Response.StatusCode = code
+	for key, head := range header {
+		//添加標頭
+		ctx.AddHeader(key, head)
+	}
+	ctx.Response.Body = ioutil.NopCloser(bytes.NewBuffer(data))
+}
+
+// 輸出HTML，參數body保存至Context.response.Body及設置ContentType、StatusCode
+func (ctx *Context) HTML(code int, body string) {
+	ctx.SetContentType("text/html; charset=utf-8")
+	ctx.SetStatusCode(code)
+	// 將參數body保存至Context.response.Body中
+	ctx.WriteString(body)
 }
 
 // 轉換成JSON存至Context.Response.body

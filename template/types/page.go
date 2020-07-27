@@ -1,13 +1,17 @@
 package types
 
 import (
+	"bytes"
 	"goadminapi/plugins/admin/models"
 	"html/template"
 
 	"goadminapi/modules/menu"
 )
 
-// SystemInfo contains basic info of system.
+type Attribute struct {
+	TemplateList map[string]string
+}
+
 type SystemInfo struct {
 	Version string
 	Theme   string
@@ -95,3 +99,26 @@ type Page struct {
 }
 
 type GetPanelFn func(ctx interface{}) (Panel, error)
+
+type TableRowData struct {
+	Id    template.HTML
+	Ids   template.HTML
+	Value map[string]InfoItem
+}
+
+// 創建並解析row_data_tmpl模板
+func ParseTableDataTmplWithID(id template.HTML, content string, value ...map[string]InfoItem) string {
+	t := template.New("row_data_tmpl")
+	t, _ = t.Parse(content)
+	buf := new(bytes.Buffer)
+	v := make(map[string]InfoItem)
+	if len(value) > 0 {
+		v = value[0]
+	}
+	_ = t.Execute(buf, TableRowData{
+		Id:    id,
+		Ids:   `typeof(selectedRows)==="function" ? selectedRows().join() : ""`,
+		Value: v,
+	})
+	return buf.String()
+}

@@ -5,6 +5,7 @@ import (
 	"goadminapi/modules/utils"
 	"html/template"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 )
@@ -35,7 +36,7 @@ type Config struct {
 	UrlPrefix string `json:"prefix,omitempty" yaml:"prefix,omitempty" ini:"prefix,omitempty"`
 
 	// The theme name of template.
-	// Theme string `json:"theme,omitempty" yaml:"theme,omitempty" ini:"theme,omitempty"`
+	Theme string `json:"theme,omitempty" yaml:"theme,omitempty" ini:"theme,omitempty"`
 
 	// The path where files will be stored into.
 	Store Store `json:"store,omitempty" yaml:"store,omitempty" ini:"store,omitempty"`
@@ -57,6 +58,9 @@ type Config struct {
 
 	prefix string
 
+	// Assets visit link.
+	AssetUrl string `json:"asset_url,omitempty" yaml:"asset_url,omitempty" ini:"asset_url,omitempty"`
+
 	// Session valid time duration,units are seconds. Default 7200.
 	SessionLifeTime int `json:"session_life_time,omitempty" yaml:"session_life_time,omitempty" ini:"session_life_time,omitempty"`
 
@@ -77,6 +81,9 @@ type Config struct {
 
 	// Debug mode
 	Debug bool `json:"debug,omitempty" yaml:"debug,omitempty" ini:"debug,omitempty"`
+
+	// Color scheme.
+	ColorScheme string `json:"color_scheme,omitempty" yaml:"color_scheme,omitempty" ini:"color_scheme,omitempty"`
 }
 
 // DatabaseList is a map of Database.
@@ -163,9 +170,9 @@ func SetDefault(cfg Config) Config {
 	cfg.IndexUrl = utils.SetDefault(cfg.IndexUrl, "", "/info/manager")
 	cfg.LoginUrl = utils.SetDefault(cfg.LoginUrl, "", "/login")
 	cfg.AuthUserTable = utils.SetDefault(cfg.AuthUserTable, "", "users")
-	// if cfg.Theme == "adminlte" {
-	// 	cfg.ColorScheme = utils.SetDefault(cfg.ColorScheme, "", "skin-black")
-	// }
+	if cfg.Theme == "adminlte" {
+		cfg.ColorScheme = utils.SetDefault(cfg.ColorScheme, "", "skin-black")
+	}
 	// cfg.FileUploadEngine.Name = utils.SetDefault(cfg.FileUploadEngine.Name, "", "local")
 	// cfg.Env = utils.SetDefault(cfg.Env, "", EnvProd)
 	if cfg.SessionLifeTime == 0 {
@@ -234,6 +241,14 @@ func (c *Config) Prefix() string {
 	return c.prefix
 }
 
+// 取得Config.prefix
+func (c *Config) AssertPrefix() string {
+	if c.prefix == "/" {
+		return ""
+	}
+	return c.prefix
+}
+
 // 處理Config.IndexUrl(登入後導向的url)後回傳
 func (c *Config) GetIndexURL() string {
 	// 取得Config.IndexUrl(登入後導向的url)
@@ -283,6 +298,17 @@ func (s Store) URL(suffix string) string {
 		return s.Prefix + "/" + suffix
 	}
 	return "/" + s.Prefix + "/" + suffix
+}
+
+// URLRemovePrefix將URL的前綴(ex:/admin)去除
+func (c *Config) URLRemovePrefix(url string) string {
+	if url == c.prefix {
+		return "/"
+	}
+	if c.prefix == "/" {
+		return url
+	}
+	return strings.Replace(url, c.prefix, "", 1)
 }
 
 func (d Database) ParamStr() string {
@@ -336,6 +362,11 @@ func GetLoginUrl() string {
 	return globalCfg.LoginUrl
 }
 
+// globalCfg.AssetUrl
+func GetAssetUrl() string {
+	return globalCfg.AssetUrl
+}
+
 func GetLanguage() string {
 	return globalCfg.Language
 }
@@ -351,6 +382,10 @@ func GetDebug() bool {
 
 func GetDomain() string {
 	return globalCfg.Domain
+}
+
+func GetTheme() string {
+	return globalCfg.Theme
 }
 
 func GetNoLimitLoginIP() bool {

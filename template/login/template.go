@@ -1,4 +1,7 @@
-{{define "login_theme1"}}
+package login
+
+// 登入介面HTML語法
+const loginTmpl = `{{define "login_theme1"}}
     <!DOCTYPE html>
     <!--[if lt IE 7]>
     <html class="no-js lt-ie9 lt-ie8 lt-ie7">
@@ -87,4 +90,4 @@
 
     </body>
     </html>
-{{end}}
+{{end}}`
