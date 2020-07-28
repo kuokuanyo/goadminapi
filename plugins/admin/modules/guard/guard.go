@@ -1,9 +1,14 @@
 package guard
 
 import (
+	"goadminapi/context"
 	"goadminapi/modules/db"
+	"goadminapi/modules/errors"
 	"goadminapi/modules/service"
+	"goadminapi/template"
+	"goadminapi/template/types"
 
+	"goadminapi/plugins/admin/modules/response"
 	"goadminapi/plugins/admin/modules/table"
 )
 
@@ -11,7 +16,7 @@ type Guard struct {
 	services  service.List
 	conn      db.Connection
 	tableList table.GeneratorList
-	//navBtns   *types.Buttons
+	navBtns   *types.Buttons
 }
 
 // 將參數s、c、t設置至Guard(struct)後回傳
@@ -22,4 +27,21 @@ func New(s service.List, c db.Connection, t table.GeneratorList) *Guard {
 		tableList: t,
 		// navBtns:   b,
 	}
+}
+
+// 查詢url裡的參數(__prefix)
+func (g *Guard) CheckPrefix(ctx *context.Context) {
+	prefix := ctx.Query("__prefix")
+	if _, ok := g.tableList[prefix]; !ok {
+		if ctx.Headers("X-PJAX") == "" && ctx.Method() != "GET" {
+			response.BadRequest(ctx, errors.Msg)
+		} else {
+			response.Alert(ctx, errors.Msg, errors.Msg, "table model not found", g.conn, g.navBtns,
+				template.Missing404Page)
+		}
+		ctx.Abort()
+		return
+	}
+
+	ctx.Next()
 }

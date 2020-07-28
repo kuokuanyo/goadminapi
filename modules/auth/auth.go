@@ -8,6 +8,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// 透過參數ctx回傳目前登入的用戶(Context.UserValue["user"])並轉換成UserModel
+func Auth(ctx *context.Context) models.UserModel {
+	return ctx.User().(models.UserModel)
+}
+
 // 檢查user密碼是否正確之後取得user的role、permission及可用menu，最後更新資料表(goadmin_users)的密碼值(加密)
 func Check(password string, username string, conn db.Connection) (user models.UserModel, ok bool) {
 

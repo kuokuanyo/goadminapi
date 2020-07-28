@@ -53,7 +53,6 @@ func (h *Handler) Auth(ctx *context.Context) {
 			}
 		}
 	}
-
 	// 成功，回傳code:200 and msg:ok and data
 	response.OkWithData(ctx, map[string]interface{}{
 		"url": h.config.GetIndexURL(),
@@ -61,16 +60,14 @@ func (h *Handler) Auth(ctx *context.Context) {
 	return
 }
 
-// ShowLogin判斷map[string]Component(interface)是否有參數login(key)的值，接著執行template將data寫入buf並輸出HTML
+// ShowLogin 判斷map[string]Component(interface)是否有參數login(key)的值，接著執行template將data寫入buf並輸出HTML
 func (h *Handler) ShowLogin(ctx *context.Context) {
-
 	// GetComp判斷map[string]Component是否有參數name(login)的值，有的話則回傳Component(interface)
 	// GetTemplate添加login_theme1給新的HTML模板，接著將函式加入模板並解析
 	// 最後回傳模板及模板名稱
 	tmpl, name := template.GetComp("login").GetTemplate()
 	buf := new(bytes.Buffer)
 
-	// ExecuteTemplate為html/template套件
 	// 將第三個參數data寫入buf(struct)後輸出HTML
 	if err := tmpl.ExecuteTemplate(buf, name, struct {
 		UrlPrefix string
@@ -79,7 +76,6 @@ func (h *Handler) ShowLogin(ctx *context.Context) {
 		CdnUrl    string
 		// System    types.SystemInfo
 	}{
-		// AssertPrefix取得Config.prefix
 		UrlPrefix: h.config.AssertPrefix(),
 		Title:     h.config.LoginTitle,
 		Logo:      h.config.LoginLogo,

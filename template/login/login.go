@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"html/template"
 	"strings"
-
-	"goadminapi/modules/language"
 )
 
 // Login也是Component(interface)
@@ -23,8 +21,6 @@ func GetLoginComponent() *Login {
 
 // 加入函式加入模板中
 var DefaultFuncMap = template.FuncMap{
-	"lang":     language.Get,
-	"langHtml": language.GetFromHtml,
 	"link": func(cdnUrl, prefixUrl, assetsUrl string) string {
 		if cdnUrl == "" {
 			return prefixUrl + assetsUrl
@@ -53,7 +49,6 @@ func (l *Login) GetTemplate() (*template.Template, string) {
 		// Funcs將要添加的函式元素加入
 		Funcs(DefaultFuncMap).
 		Parse(loginTmpl)
-
 	if err != nil {
 		panic("Login GetTemplate Error: ")
 	}

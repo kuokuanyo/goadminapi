@@ -18,6 +18,13 @@ var (
 	count      uint32
 )
 
+// 頁面動畫
+type PageAnimation struct {
+	Type     string  `json:"type,omitempty" yaml:"type,omitempty" ini:"type,omitempty"`
+	Duration float32 `json:"duration,omitempty" yaml:"duration,omitempty" ini:"duration,omitempty"`
+	Delay    float32 `json:"delay,omitempty" yaml:"delay,omitempty" ini:"delay,omitempty"`
+}
+
 type Config struct {
 	// An map supports multi database connection. The first
 	// element of Databases is the default connection. See the
@@ -27,10 +34,6 @@ type Config struct {
 	// The cookie domain used in the auth modules. see
 	// the session.go.
 	Domain string `json:"domain,omitempty" yaml:"domain,omitempty" ini:"domain,omitempty"`
-
-	// Used to set as the localize language which show in the
-	// interface.
-	Language string `json:"language,omitempty" yaml:"language,omitempty" ini:"language,omitempty"`
 
 	// The global url prefix.
 	UrlPrefix string `json:"prefix,omitempty" yaml:"prefix,omitempty" ini:"prefix,omitempty"`
@@ -64,8 +67,23 @@ type Config struct {
 	// Session valid time duration,units are seconds. Default 7200.
 	SessionLifeTime int `json:"session_life_time,omitempty" yaml:"session_life_time,omitempty" ini:"session_life_time,omitempty"`
 
+	// Env is the environment,which maybe local,test,prod.
+	Env string `json:"env,omitempty" yaml:"env,omitempty" ini:"env,omitempty"`
+
+	// Page animation
+	Animation PageAnimation `json:"animation,omitempty" yaml:"animation,omitempty" ini:"animation,omitempty"`
+
 	// Limit login with different IPs
 	NoLimitLoginIP bool `json:"no_limit_login_ip,omitempty" yaml:"no_limit_login_ip,omitempty" ini:"no_limit_login_ip,omitempty"`
+
+	// Custom html in the tag head.
+	CustomHeadHtml template.HTML `json:"custom_head_html,omitempty" yaml:"custom_head_html,omitempty" ini:"custom_head_html,omitempty"`
+
+	// Custom html after body.
+	CustomFootHtml template.HTML `json:"custom_foot_html,omitempty" yaml:"custom_foot_html,omitempty" ini:"custom_foot_html,omitempty"`
+
+	// Footer Info html
+	FooterInfo template.HTML `json:"footer_info,omitempty" yaml:"footer_info,omitempty" ini:"footer_info,omitempty"`
 
 	// Login page title
 	LoginTitle string `json:"login_title,omitempty" yaml:"login_title,omitempty" ini:"login_title,omitempty"`
@@ -84,6 +102,14 @@ type Config struct {
 
 	// Color scheme.
 	ColorScheme string `json:"color_scheme,omitempty" yaml:"color_scheme,omitempty" ini:"color_scheme,omitempty"`
+
+	Custom404HTML template.HTML `json:"custom_404_html,omitempty" yaml:"custom_404_html,omitempty" ini:"custom_404_html,omitempty"`
+
+	Custom403HTML template.HTML `json:"custom_403_html,omitempty" yaml:"custom_403_html,omitempty" ini:"custom_403_html,omitempty"`
+
+	Custom500HTML template.HTML `json:"custom_500_html,omitempty" yaml:"custom_500_html,omitempty" ini:"custom_500_html,omitempty"`
+
+	ExcludeThemeComponents []string `json:"exclude_theme_components,omitempty" yaml:"exclude_theme_components,omitempty" ini:"exclude_theme_components,omitempty"`
 }
 
 // DatabaseList is a map of Database.
@@ -166,7 +192,7 @@ func SetDefault(cfg Config) Config {
 	cfg.LoginTitle = utils.SetDefault(cfg.LoginTitle, "", "Orange")
 	cfg.Logo = template.HTML(utils.SetDefault(string(cfg.Logo), "", "<b>Go</b>Orange"))
 	cfg.MiniLogo = template.HTML(utils.SetDefault(string(cfg.MiniLogo), "", "<b>O</b>O"))
-	// cfg.Theme = utils.SetDefault(cfg.Theme, "", "adminlte")
+	cfg.Theme = utils.SetDefault(cfg.Theme, "", "adminlte")
 	cfg.IndexUrl = utils.SetDefault(cfg.IndexUrl, "", "/info/manager")
 	cfg.LoginUrl = utils.SetDefault(cfg.LoginUrl, "", "/login")
 	cfg.AuthUserTable = utils.SetDefault(cfg.AuthUserTable, "", "users")
@@ -204,6 +230,14 @@ func (d DatabaseList) GroupByDriver() map[string]DatabaseList {
 		}
 	}
 	return drivers
+}
+
+func (d DatabaseList) Copy() DatabaseList {
+	var c = make(DatabaseList)
+	for k, v := range d {
+		c[k] = v
+	}
+	return c
 }
 
 // 將所有globalCfg.Databases[key]的driver值設置至DatabaseList(map[string]Database).Database.Driver後回傳
@@ -269,6 +303,11 @@ func (c *Config) Url(suffix string) string {
 		return c.prefix
 	}
 	return c.prefix + suffix
+}
+
+// 判斷Config.Env是否是"prod"
+func (c *Config) IsProductionEnvironment() bool {
+	return c.Env == "prod"
 }
 
 // 處理URL
@@ -352,9 +391,36 @@ func (d Database) ParamStr() string {
 	return p
 }
 
+// globalCfg.prefix
+func Prefix() string {
+	return globalCfg.prefix
+}
+
+// 處理globalCfg(Config struct).IndexUrl(登入後導向的url)後回傳
+func GetIndexURL() string {
+	return globalCfg.GetIndexURL()
+}
+
+func GetTitle() string {
+	return globalCfg.Title
+}
+
+func GetLogo() template.HTML {
+	return globalCfg.Logo
+}
+
+func GetMiniLogo() template.HTML {
+	return globalCfg.MiniLogo
+}
+
 // 將globalCfg.suffix(後綴)與globalCfg.prefix(前綴)處理後回傳
 func Url(suffix string) string {
 	return globalCfg.Url(suffix)
+}
+
+// globalCfg(Config struct).prefix將URL的前綴去除
+func URLRemovePrefix(url string) string {
+	return globalCfg.URLRemovePrefix(url)
 }
 
 // globalCfg.LoginUrl
@@ -362,13 +428,13 @@ func GetLoginUrl() string {
 	return globalCfg.LoginUrl
 }
 
+func AssertPrefix() string {
+	return globalCfg.AssertPrefix()
+}
+
 // globalCfg.AssetUrl
 func GetAssetUrl() string {
 	return globalCfg.AssetUrl
-}
-
-func GetLanguage() string {
-	return globalCfg.Language
 }
 
 func GetStore() Store {
@@ -388,12 +454,69 @@ func GetTheme() string {
 	return globalCfg.Theme
 }
 
+// 將Config.Databases[key].Driver設置至Config.Databases[key]後回傳(迴圈)
+func (c *Config) EraseSens() *Config {
+	for key := range c.Databases {
+		c.Databases[key] = Database{
+			Driver: c.Databases[key].Driver,
+		}
+	}
+	return c
+}
+
+// 複製globalCfg(Config struct)後將Config.Databases[key].Driver設置至Config.Databases[key]後回傳
+func Get() *Config {
+	return globalCfg.Copy().EraseSens()
+}
+
 func GetNoLimitLoginIP() bool {
 	return globalCfg.NoLimitLoginIP
 }
 
+func GetAnimation() PageAnimation {
+	return globalCfg.Animation
+}
+
 func GetSessionLifeTime() int {
 	return globalCfg.SessionLifeTime
+}
+
+func GetColorScheme() string {
+	return globalCfg.ColorScheme
+}
+
+// 判斷globalCfg(Config).Env是否是"prod"
+func IsProductionEnvironment() bool {
+	return globalCfg.IsProductionEnvironment()
+}
+
+// 排除主題元件
+func GetExcludeThemeComponents() []string {
+	return globalCfg.ExcludeThemeComponents
+}
+
+func GetCustomHeadHtml() template.HTML {
+	return globalCfg.CustomHeadHtml
+}
+
+func GetCustomFootHtml() template.HTML {
+	return globalCfg.CustomFootHtml
+}
+
+func GetFooterInfo() template.HTML {
+	return globalCfg.FooterInfo
+}
+
+func GetCustom500HTML() template.HTML {
+	return globalCfg.Custom500HTML
+}
+
+func GetCustom404HTML() template.HTML {
+	return globalCfg.Custom404HTML
+}
+
+func GetCustom403HTML() template.HTML {
+	return globalCfg.Custom403HTML
 }
 
 // 將DatabaseList(map[string]Database)JSON編碼
@@ -426,11 +549,10 @@ func SrvWithConfig(c *Config) *Service {
 // 將Config的值設置至map[string]string
 func (c *Config) ToMap() map[string]string {
 	var m = make(map[string]string, 0)
-	m["language"] = c.Language
 	m["databases"] = c.Databases.JSON()
 	m["domain"] = c.Domain
 	m["url_prefix"] = c.UrlPrefix
-	// m["theme"] = c.Theme
+	m["theme"] = c.Theme
 	m["store"] = c.Store.JSON()
 	m["title"] = c.Title
 	m["logo"] = string(c.Logo)
@@ -507,9 +629,8 @@ func (c *Config) ToMap() map[string]string {
 func (c *Config) Update(m map[string]string) error {
 	updateLock.Lock()
 	defer updateLock.Unlock()
-	c.Language = m["language"]
 	c.Domain = m["domain"]
-	// c.Theme = m["theme"]
+	c.Theme = m["theme"]
 	c.Title = m["title"]
 	c.Logo = template.HTML(m["logo"])
 	c.MiniLogo = template.HTML(m["mini_logo"])
@@ -592,4 +713,54 @@ func (c *Config) Update(m map[string]string) error {
 	// }
 
 	return nil
+}
+
+func (c *Config) Copy() *Config {
+	return &Config{
+		Databases: c.Databases.Copy(),
+		Domain:    c.Domain,
+		// Language:                      c.Language,
+		UrlPrefix: c.UrlPrefix,
+		Theme:     c.Theme,
+		Store:     c.Store,
+		Title:     c.Title,
+		Logo:      c.Logo,
+		MiniLogo:  c.MiniLogo,
+		IndexUrl:  c.IndexUrl,
+		LoginUrl:  c.LoginUrl,
+		Debug:     c.Debug,
+		Env:       c.Env,
+		// InfoLogPath:                   c.InfoLogPath,
+		// ErrorLogPath:                  c.ErrorLogPath,
+		// AccessLogPath:                 c.AccessLogPath,
+		// SqlLog:                        c.SqlLog,
+		// AccessLogOff:                  c.AccessLogOff,
+		// InfoLogOff:                    c.InfoLogOff,
+		// ErrorLogOff:                   c.ErrorLogOff,
+		ColorScheme:     c.ColorScheme,
+		SessionLifeTime: c.SessionLifeTime,
+		AssetUrl:        c.AssetUrl,
+		// FileUploadEngine:              c.FileUploadEngine,
+		CustomHeadHtml: c.CustomHeadHtml,
+		CustomFootHtml: c.CustomFootHtml,
+		FooterInfo:     c.FooterInfo,
+		LoginTitle:     c.LoginTitle,
+		LoginLogo:      c.LoginLogo,
+		AuthUserTable:  c.AuthUserTable,
+		// Extra:                         c.Extra,
+		Animation:      c.Animation,
+		NoLimitLoginIP: c.NoLimitLoginIP,
+		// Logger:                        c.Logger,
+		// SiteOff:                       c.SiteOff,
+		// HideConfigCenterEntrance:      c.HideConfigCenterEntrance,
+		// HideAppInfoEntrance:           c.HideAppInfoEntrance,
+		// HideToolEntrance:              c.HideToolEntrance,
+		Custom404HTML: c.Custom404HTML,
+		Custom500HTML: c.Custom500HTML,
+		// UpdateProcessFn:               c.UpdateProcessFn,
+		// OpenAdminApi:                  c.OpenAdminApi,
+		// HideVisitorUserCenterEntrance: c.HideVisitorUserCenterEntrance,
+		ExcludeThemeComponents: c.ExcludeThemeComponents,
+		prefix:                 c.prefix,
+	}
 }

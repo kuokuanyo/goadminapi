@@ -225,6 +225,11 @@ func (ses *Session) StartCtx(ctx *context.Context) (*Session, error) {
 	return ses, nil
 }
 
+// 藉由參數(key)取得Session.Values[key]
+func (ses *Session) Get(key string) interface{} {
+	return ses.Values[key]
+}
+
 // 將參數key、value加入Session.Values後檢查是否有符合Session.Sid的資料，判斷插入或是更新資料
 // 最後設置cookie(struct)並儲存在response header Set-Cookie中
 func (ses *Session) Add(key string, value interface{}) error {

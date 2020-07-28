@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -108,9 +109,24 @@ func (app *App) Name(name string) {
 	}
 }
 
+// 回傳目前登入的用戶(Context.UserValue["user"])
+func (ctx *Context) User() interface{} {
+	return ctx.UserValue["user"]
+}
+
+// 藉由參數key、value設定Context.UserValue
+func (ctx *Context) SetUserValue(key string, value interface{}) {
+	ctx.UserValue[key] = value
+}
+
 // 回傳Request url path
 func (ctx *Context) Path() string {
 	return ctx.Request.URL.Path
+}
+
+// 回傳方法
+func (ctx *Context) Method() string {
+	return ctx.Request.Method
 }
 
 // 將參數prefix、middleware新增至RouterGroup(struct)
@@ -122,6 +138,11 @@ func (app *App) Group(prefix string, middleware ...Handler) *RouterGroup {
 	}
 }
 
+// Abort abort the context.
+func (ctx *Context) Abort() {
+	ctx.index = 63
+}
+
 // 執行迴圈Context.handlers[ctx.index](ctx)
 func (ctx *Context) Next() {
 	ctx.index++
@@ -130,6 +151,11 @@ func (ctx *Context) Next() {
 		// 執行func(ctx *Context)
 		ctx.handlers[ctx.index](ctx)
 	}
+}
+
+// 取得Request url(在url中)裡的參數(key)
+func (ctx *Context) Query(key string) string {
+	return ctx.Request.URL.Query().Get(key)
 }
 
 // 藉由參數key取得multipart/form-data中的值
@@ -162,6 +188,12 @@ func (ctx *Context) SetContentType(contentType string) {
 // 將參數設置至Context.Response.StatusCode
 func (ctx *Context) SetStatusCode(code int) {
 	ctx.Response.StatusCode = code
+}
+
+// 取得表單的值(所有)，參數放於multipart/form-data.
+func (ctx *Context) PostForm() url.Values {
+	_ = ctx.Request.ParseMultipartForm(32 << 20)
+	return ctx.Request.PostForm
 }
 
 // 將狀態碼，標頭(header)及body寫入Context.Response
@@ -210,6 +242,11 @@ func (ctx *Context) JSON(code int, Body map[string]interface{}) {
 	ctx.Response.Body = ioutil.NopCloser(bytes.NewReader(BodyStr))
 }
 
+// 判斷是否header X-PJAX:true
+func (ctx *Context) IsPjax() bool {
+	return ctx.Headers("X-PJAX") == "true"
+}
+
 // AppendReqAndResp stores the request info and handle into app.
 // support the route parameter. The route parameter will be recognized as
 // wildcard store into the RegUrl of Path struct. For example:
@@ -235,6 +272,15 @@ func (g *RouterGroup) AppendReqAndResp(url, method string, handler []Handler) {
 		URL:    join(g.Prefix, url),
 		Method: method,
 	}] = append(h, handler...)
+}
+
+// 將參數prefix、middleware新增至RouterGroup(struct)
+func (g *RouterGroup) Group(prefix string, middleware ...Handler) *RouterGroup {
+	return &RouterGroup{
+		app:         g.app,
+		Middlewares: append(g.Middlewares, middleware...),
+		Prefix:      join(slash(g.Prefix), slash(prefix)),
+	}
 }
 
 // POST等於在AppendReqAndResp(url, "post", handler)

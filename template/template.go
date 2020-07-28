@@ -1,15 +1,41 @@
 package template
 
 import (
+	"bytes"
 	"errors"
+	"goadminapi/plugins/admin/models"
 	"goadminapi/template/login"
 	"goadminapi/template/types"
 	"html/template"
+	"path"
 	"strconv"
 	"strings"
+	"sync"
+
+	c "goadminapi/modules/config"
+	"goadminapi/modules/logger"
+	"goadminapi/modules/menu"
 )
 
+type ExecuteParam struct {
+	User       models.UserModel
+	Tmpl       *template.Template
+	TmplName   string
+	Panel      types.Panel
+	Config     c.Config
+	Menu       *menu.Menu
+	Animation  bool
+	Buttons    types.Buttons
+	NoCompress bool
+	Iframe     bool
+}
+
 type PageType uint8
+
+var (
+	templateMu sync.Mutex
+	compMu     sync.Mutex
+)
 
 var templateMap = make(map[string]Template)
 
@@ -114,7 +140,7 @@ type Template interface {
 	// TreeView() types.TreeViewAttribute
 	// Tree() types.TreeAttribute
 	// Tabs() types.TabsAttribute
-	// Alert() types.AlertAttribute
+	Alert() types.AlertAttribute
 	// Link() types.LinkAttribute
 
 	// Paginator() types.PaginatorAttribute
@@ -129,16 +155,16 @@ type Template interface {
 	// Builder methods
 	// GetTmplList() map[string]string
 	// GetAssetList() []string
-	// GetAssetImportHTML(exceptComponents ...string) template.HTML
+	GetAssetImportHTML(exceptComponents ...string) template.HTML
 	GetAsset(string) ([]byte, error)
-	// GetTemplate(bool) (*template.Template, string)
+	GetTemplate(bool) (*template.Template, string)
 	// GetVersion() string
 	// GetRequirements() []string
-	// GetHeadHTML() template.HTML
-	// GetFootJS() template.HTML
-	// Get404HTML() template.HTML
-	// Get500HTML() template.HTML
-	// Get403HTML() template.HTML
+	GetHeadHTML() template.HTML
+	GetFootJS() template.HTML
+	Get404HTML() template.HTML
+	Get500HTML() template.HTML
+	Get403HTML() template.HTML
 }
 
 type Component interface {
@@ -149,6 +175,14 @@ type Component interface {
 	GetContent() template.HTML
 	IsAPage() bool
 	GetName() string
+}
+
+// 取得預設的Template(interface)
+func Default() Template {
+	if temp, ok := templateMap[c.GetTheme()]; ok {
+		return temp
+	}
+	panic("wrong theme name")
 }
 
 // 判斷templateMap(map[string]Template)的key鍵是否參數theme，有則回傳Template(interface)
@@ -168,6 +202,39 @@ func GetComp(name string) Component {
 	panic("wrong component name")
 }
 
+// 將給定的數據(types.Page(struct))寫入buf(struct)並回傳
+func Execute(param ExecuteParam) *bytes.Buffer {
+	buf := new(bytes.Buffer)
+	err := param.Tmpl.ExecuteTemplate(buf, param.TmplName,
+		types.NewPage(types.NewPageParam{
+			User:         param.User,
+			Menu:         param.Menu,
+			Panel:        param.Panel.GetContent(append([]bool{param.Config.IsProductionEnvironment() && (!param.NoCompress)}, param.Animation)...),
+			Assets:       GetComponentAssetImportHTML(),
+			Buttons:      param.Buttons,
+			Iframe:       param.Iframe,
+			TmplHeadHTML: Default().GetHeadHTML(),
+			TmplFootJS:   Default().GetFootJS(),
+		}))
+	if err != nil {
+		logger.Error("template execute error", err)
+	}
+	return buf
+}
+
+// 新增主題及方法至templateMap(map[string]Template)
+func Add(name string, temp Template) {
+	templateMu.Lock()
+	defer templateMu.Unlock()
+	if temp == nil {
+		panic("template is nil")
+	}
+	if _, dup := templateMap[name]; dup {
+		panic("add template twice " + name)
+	}
+	templateMap[name] = temp
+}
+
 // 檢查compMap(map[string]Component)的物件後將前端文件路徑加入[]string中
 func GetComponentAsset() []string {
 	assets := make([]string, 0)
@@ -176,6 +243,44 @@ func GetComponentAsset() []string {
 		assets = append(assets, comp.GetAssetList()...)
 	}
 	return assets
+}
+
+// 檢查compMap(map[string]Component)的物件是否符合條件並加入文件路徑到陣列中
+func GetComponentAssetWithinPage() []string {
+	assets := make([]string, 0)
+	for _, comp := range compMap {
+		if !comp.IsAPage() {
+			assets = append(assets, comp.GetAssetList()...)
+		}
+	}
+	return assets
+}
+
+// 透過參數s判斷css或js檔案，取得HTML
+func getHTMLFromAssetUrl(s string) template.HTML {
+	switch path.Ext(s) {
+	case ".css":
+		return template.HTML(`<link rel="stylesheet" href="` + c.GetAssetUrl() + c.Url("/assets"+s) + `">`)
+	case ".js":
+		return template.HTML(`<script src="` + c.GetAssetUrl() + c.Url("/assets"+s) + `"></script>`)
+	default:
+		return ""
+	}
+}
+
+// 處理asset後並回傳HTML語法
+func GetComponentAssetImportHTML() (res template.HTML) {
+	// GetAssetImportHTML(Template(interface)的方法)
+	res = Default().GetAssetImportHTML(c.GetExcludeThemeComponents()...)
+	// 在頁面中獲取物件asset
+	// 檢查map[string]Component物件是否符合條件並加入文件路徑到陣列中
+	assets := GetComponentAssetWithinPage()
+
+	for i := 0; i < len(assets); i++ {
+		// 透過參數assets[i]判斷css或js檔案，取得HTML
+		res += getHTMLFromAssetUrl(assets[i])
+	}
+	return
 }
 
 // 對map[string]Component迴圈，對每一個Component(interface)執行GetAsset方法
@@ -189,45 +294,42 @@ func GetAsset(path string) ([]byte, error) {
 	return nil, errors.New(path + " not found")
 }
 
-// // 透過參數msg設置Panel(struct)
-// func WarningPanel(msg string, pts ...PageType) types.Panel {
-// 	pt := Error500Page
-// 	if len(pts) > 0 {
-// 		pt = pts[0]
-// 	}
-// 	pageTitle, description, content := GetPageContentFromPageType(msg, msg, msg, pt)
-// 	return types.Panel{
-// 		// Default()取得預設的template(主題名稱已經通過全局配置)
-// 		// Alert為Template(interface)的方法
-// 		Content:     content,
-// 		Description: description,
-// 		Title:       pageTitle,
-// 	}
-// }
+// 透過參數msg設置Panel(struct)
+func WarningPanel(msg string, pts ...PageType) types.Panel {
+	pt := Error500Page
+	if len(pts) > 0 {
+		pt = pts[0]
+	}
+	pageTitle, description, content := GetPageContentFromPageType(msg, msg, msg, pt)
+	return types.Panel{
+		Content:     content,
+		Description: description,
+		Title:       pageTitle,
+	}
+}
 
-// func GetPageContentFromPageType(title, desc, msg string, pt PageType) (template.HTML, template.HTML, template.HTML) {
-// 	// globalCfg.Debug
-// 	if c.GetDebug() {
-// 		return template.HTML(title), template.HTML(desc), Default().Alert().Warning(msg)
-// 	}
-
-// 	if pt == Missing404Page {
-// 		if c.GetCustom404HTML() != template.HTML("") {
-// 			return "", "", c.GetCustom404HTML()
-// 		} else {
-// 			return "", "", Default().Get404HTML()
-// 		}
-// 	} else if pt == NoPermission403Page {
-// 		if c.GetCustom404HTML() != template.HTML("") {
-// 			return "", "", c.GetCustom403HTML()
-// 		} else {
-// 			return "", "", Default().Get403HTML()
-// 		}
-// 	} else {
-// 		if c.GetCustom500HTML() != template.HTML("") {
-// 			return "", "", c.GetCustom500HTML()
-// 		} else {
-// 			return "", "", Default().Get500HTML()
-// 		}
-// 	}
-// }
+// GetPageContentFromPageType從頁面類型取得頁面內容
+func GetPageContentFromPageType(title, desc, msg string, pt PageType) (template.HTML, template.HTML, template.HTML) {
+	if c.GetDebug() {
+		return template.HTML(title), template.HTML(desc), Default().Alert().Warning(msg)
+	}
+	if pt == Missing404Page {
+		if c.GetCustom404HTML() != template.HTML("") {
+			return "", "", c.GetCustom404HTML()
+		} else {
+			return "", "", Default().Get404HTML()
+		}
+	} else if pt == NoPermission403Page {
+		if c.GetCustom404HTML() != template.HTML("") {
+			return "", "", c.GetCustom403HTML()
+		} else {
+			return "", "", Default().Get403HTML()
+		}
+	} else {
+		if c.GetCustom500HTML() != template.HTML("") {
+			return "", "", c.GetCustom500HTML()
+		} else {
+			return "", "", Default().Get500HTML()
+		}
+	}
+}

@@ -38,26 +38,22 @@ const loginTmpl = `{{define "login_theme1"}}
                     <h2>{{.Title}}</h2>
                     <div class="form-group">
                         <label for="username" class="sr-only">Username</label>
-                        <input type="text" class="form-control" id="username" placeholder="{{lang "username"}}"
+                        <input type="text" class="form-control" id="username" placeholder="使用者"
                                autocomplete="off">
                     </div>
                     <div class="form-group">
                         <label for="password" class="sr-only">Password</label>
-                        <input type="password" class="form-control" id="password" placeholder="{{lang "password"}}"
+                        <input type="password" class="form-control" id="password" placeholder="密碼"
                                autocomplete="off">
                     </div>
                     <div class="form-group">
-                        <button class="btn btn-primary" onclick="submitData()">{{lang "login"}}</button>
+                        <button class="btn btn-primary" onclick="submitData()">登入</button>
                     </div>
                 </form>
             </div>
         </div>
         <div class="row" style="padding-top: 60px; clear: both;">
-            <div class="col-md-12 text-center">
-                <p>
-                    <small>&copy; All Rights Reserved. GoAdmin</small>
-                </p>
-            </div>
+            <div class="col-md-12 text-center"></div>
         </div>
     </div>
 
@@ -82,7 +78,7 @@ const loginTmpl = `{{define "login_theme1"}}
                     location.href = data.data.url
                 },
                 error: function (data) {
-                    alert('{{lang "login fail"}}');
+                    alert('登入失敗');
                 }
             });
         }

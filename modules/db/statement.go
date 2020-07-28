@@ -3,6 +3,7 @@ package db
 import (
 	dbsql "database/sql"
 	"errors"
+	"fmt"
 	"goadminapi/modules/db/dialect"
 	"regexp"
 	"strings"
@@ -45,10 +46,26 @@ func newSQL() *SQL {
 	return SQLPool.Get().(*SQL)
 }
 
+// 將SQL(struct)資訊清除後將參數設置至SQL.TableName回傳
+func (sql *SQL) Table(table string) *SQL {
+	sql.clean()
+	sql.TableName = table
+	return sql
+}
+
 // 將參數(table)設置並回傳sql(struct)
 func Table(table string) *SQL {
 	sql := newSQL()
 	sql.TableName = table //sql.dialect.SQLComponent.TableName
+	sql.conn = "default"
+	return sql
+}
+
+// 將參數設置(conn)並回傳sql(struct)
+func WithDriver(conn Connection) *SQL {
+	sql := newSQL()
+	sql.diver = conn
+	sql.dialect = dialect.GetDialectByDriver(conn.Name())
 	sql.conn = "default"
 	return sql
 }
@@ -131,7 +148,6 @@ func (sql *SQL) Insert(values dialect.H) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-
 
 	if affectRow, _ := res.RowsAffected(); affectRow < 1 {
 		return 0, errors.New("no affect row")
@@ -280,6 +296,28 @@ func (sql *SQL) LeftJoin(table string, fieldA string, operation string, fieldB s
 		Table:     table,
 		Operation: operation,
 	})
+	return sql
+}
+
+func (sql *SQL) wrap(field string) string {
+	if sql.diver.Name() == "mssql" {
+		return fmt.Sprintf(`[%s]`, field)
+	}
+	return sql.diver.GetDelimiter() + field + sql.diver.GetDelimiter()
+}
+
+// OrderBy set order fields.
+func (sql *SQL) OrderBy(fields ...string) *SQL {
+	if len(fields) == 0 {
+		panic("wrong order field")
+	}
+	for i := 0; i < len(fields); i++ {
+		if i == len(fields)-2 {
+			sql.Order += " " + sql.wrap(fields[i]) + " " + fields[i+1]
+			return sql
+		}
+		sql.Order += " " + sql.wrap(fields[i]) + " and "
+	}
 	return sql
 }
 

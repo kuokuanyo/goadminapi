@@ -5,7 +5,6 @@ import (
 	"html/template"
 
 	"goadminapi/modules/errors"
-	"goadminapi/modules/language"
 )
 
 type AlertAttribute struct {
@@ -36,7 +35,7 @@ func (compo *AlertAttribute) SetContent(value template.HTML) types.AlertAttribut
 func (compo *AlertAttribute) Warning(msg string) template.HTML {
 	return compo.SetTitle(errors.MsgWithIcon).
 		SetTheme("warning").
-		SetContent(language.GetFromHtml(template.HTML(msg))).
+		SetContent(template.HTML(msg)).
 		GetContent()
 }
 

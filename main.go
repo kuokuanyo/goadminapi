@@ -6,6 +6,8 @@ import (
 
 	_ "goadminapi/adapter/gin"
 
+	_ "goadminapi/themes/adminlte"
+
 	_ "github.com/go-sql-driver/mysql"
 
 	"github.com/gin-gonic/gin"
@@ -18,9 +20,7 @@ func main() {
 	eng := engine.Default()
 
 	cfg := config.Config{
-		// 数据库配置，为一个map，key为连接名，value为对应连接信息
 		Databases: config.DatabaseList{
-			// 默认数据库连接，名字必须为default
 			"default": {
 				Host:       "127.0.0.1",
 				Port:       "3306",

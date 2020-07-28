@@ -3,7 +3,6 @@ package components
 import (
 	"fmt"
 	"goadminapi/modules/config"
-	"goadminapi/modules/language"
 	"goadminapi/template/types"
 	"goadminapi/template/types/form"
 	"html/template"
@@ -143,7 +142,7 @@ func (compo *FormAttribute) SetTitle(value template.HTML) types.FormAttribute {
 func (compo *FormAttribute) GetDefaultBoxHeader(hideBack bool) template.HTML {
 	if hideBack {
 
-		return template.HTML(fmt.Sprintf(`<h3 class="box-title">%s</h3>`, language.GetFromHtml(compo.Title)))
+		return template.HTML(fmt.Sprintf(`<h3 class="box-title">%s</h3>`, template.HTML(compo.Title)))
 	}
 
 	return template.HTML(fmt.Sprintf(`<h3 class="box-title">%s</h3>
@@ -152,7 +151,7 @@ func (compo *FormAttribute) GetDefaultBoxHeader(hideBack bool) template.HTML {
                     <a href='%s' class="btn btn-sm btn-default form-history-back"><i
                                 class="fa fa-arrow-left"></i> %s</a>
                 </div>
-            </div>`, language.GetFromHtml(compo.Title), compo.HiddenFields["__previous_"], language.Get("Back")))
+            </div>`, compo.Title, compo.HiddenFields["__previous_"], "Back"))
 }
 
 // GetDetailBoxHeader(取得細節的BoxHeader)將編輯及刪除按鈕的HTML語法處理後加入class="box-title"的HTML語法中
@@ -167,7 +166,7 @@ func (compo *FormAttribute) GetDetailBoxHeader(editUrl, deleteUrl string) templa
                 <div class="btn-group pull-right" style="margin-right: 10px">
                     <a href='%s' class="btn btn-sm btn-primary"><i
                                 class="fa fa-edit"></i> %s</a>
-                </div>`, editUrl, language.Get("Edit"))
+                </div>`, editUrl, "Edit")
 	}
 
 	if deleteUrl != "" {
@@ -175,15 +174,15 @@ func (compo *FormAttribute) GetDetailBoxHeader(editUrl, deleteUrl string) templa
                 <div class="btn-group pull-right" style="margin-right: 10px">
                     <a href='javascript:;' class="btn btn-sm btn-danger delete-btn"><i
                                 class="fa fa-trash"></i> %s</a>
-                </div>`, language.Get("Delete"))
+                </div>`, "Delete")
 	}
 
-	return template.HTML(`<h3 class="box-title">`) + language.GetFromHtml(compo.Title) + template.HTML(`</h3>
+	return template.HTML(`<h3 class="box-title">`) + template.HTML(compo.Title) + template.HTML(`</h3>
             <div class="box-tools">
 				`+deleteBtn+editBtn+`
                 <div class="btn-group pull-right" style="margin-right: 10px">
                     <a href='`+compo.HiddenFields["__previous_"]+`' class="btn btn-sm btn-default form-history-back"><i
-                                class="fa fa-arrow-left"></i> `+language.Get("Back")+`</a>
+                                class="fa fa-arrow-left"></i> `+"Back"+`</a>
                 </div>
             </div>`)
 }

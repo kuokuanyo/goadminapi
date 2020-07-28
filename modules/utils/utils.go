@@ -2,6 +2,8 @@ package utils
 
 import (
 	"encoding/json"
+	"html/template"
+	"strings"
 
 	"github.com/NebulousLabs/fastrand"
 )
@@ -47,4 +49,16 @@ func Uuid(length int64) string {
 		uuid += ele[fastrand.Intn(59)]
 	}
 	return uuid
+}
+
+func CompressedContent(h *template.HTML) {
+	st := strings.Split(string(*h), "\n")
+	var ss []string
+	for i := 0; i < len(st); i++ {
+		st[i] = strings.TrimSpace(st[i])
+		if st[i] != "" {
+			ss = append(ss, st[i])
+		}
+	}
+	*h = template.HTML(strings.Join(ss, "\n"))
 }
