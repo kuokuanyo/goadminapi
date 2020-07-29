@@ -47,11 +47,8 @@ func (t UserModel) Find(id interface{}) UserModel {
 
 // 透過參數username尋找符合的資料並設置至UserModel
 func (t UserModel) FindByUserName(username interface{}) UserModel {
-	// Table藉由給定的table回傳sql(struct)
-	// sql 語法 where = ...，回傳 SQl struct
-	// First回傳第一筆符合的資料
 	item, _ := t.Table(t.TableName).Where("username", "=", username).First()
-	// 將item資訊設置至UserModel後回傳
+
 	return t.MapToModel(item)
 }
 
@@ -93,7 +90,6 @@ func (t UserModel) GetAllRoleId() []interface{} {
 
 // 查詢user的permission
 func (t UserModel) WithPermissions() UserModel {
-
 	var permissions = make([]map[string]interface{}, 0)
 
 	//可能會有多個role id(可以設定多個role)
@@ -265,17 +261,17 @@ func (t UserModel) WithMenus() UserModel {
 
 	// 判斷是否為超級管理員
 	if t.IsSuperAdmin() {
-		menuIdsModel, _ = t.Table("goadmin_role_menu").
-			LeftJoin("goadmin_menu", "goadmin_menu.id", "=", "goadmin_role_menu.menu_id").
+		menuIdsModel, _ = t.Table("role_menu").
+			LeftJoin("menu", "menu.id", "=", "role_menu.menu_id").
 			Select("menu_id", "parent_id").
 			All()
 	} else {
 		// 取得menuIdsModel藉由role_id
 		rolesId := t.GetAllRoleId()
 		if len(rolesId) > 0 {
-			menuIdsModel, _ = t.Table("goadmin_role_menu").
-				LeftJoin("goadmin_menu", "goadmin_menu.id", "=", "goadmin_role_menu.menu_id").
-				WhereIn("goadmin_role_menu.role_id", rolesId).
+			menuIdsModel, _ = t.Table("role_menu").
+				LeftJoin("menu", "menu.id", "=", "role_menu.menu_id").
+				WhereIn("role_menu.role_id", rolesId).
 				Select("menu_id", "parent_id").
 				All()
 		}

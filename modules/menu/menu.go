@@ -33,7 +33,6 @@ func GetGlobalMenu(user models.UserModel, conn db.Connection) *Menu {
 	// 查詢角色、權限
 	user.WithRoles().WithMenus()
 	if user.IsSuperAdmin() {
-		// 取得多筆資料(利用where、order等篩選)
 		menus, _ = db.WithDriver(conn).Table("menu").
 			Where("id", ">", 0).
 			OrderBy("order", "asc").
@@ -43,7 +42,7 @@ func GetGlobalMenu(user models.UserModel, conn db.Connection) *Menu {
 		for i := 0; i < len(user.MenuIds); i++ {
 			ids = append(ids, user.MenuIds[i])
 		}
-		menus, _ = db.WithDriver(conn).Table("goadmin_menu").
+		menus, _ = db.WithDriver(conn).Table("menu").
 			WhereIn("id", ids).
 			OrderBy("order", "asc").
 			All()
@@ -121,4 +120,9 @@ func (menu *Menu) SetActiveClass(path string) *Menu {
 		}
 	}
 	return menu
+}
+
+// AddMaxOrder = Menu.MaxOrder+1
+func (menu *Menu) AddMaxOrder() {
+	menu.MaxOrder++
 }

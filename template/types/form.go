@@ -154,3 +154,13 @@ type FormPanel struct {
 
 type GroupFormFields []FormFields
 type GroupFieldHeaders []string
+
+// 判斷FormFields[i].Field是否存在參數field，存在則回傳FormFields[i](FormField)
+func (f FormFields) FindByFieldName(field string) *FormField {
+	for i := 0; i < len(f); i++ {
+		if f[i].Field == field {
+			return &f[i]
+		}
+	}
+	return nil
+}

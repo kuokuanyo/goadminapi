@@ -78,6 +78,21 @@ func (sql *SQL) WithDriver(conn Connection) *SQL {
 	return sql
 }
 
+// 將參數設置(connName、conn)並回傳sql(struct)
+func WithDriverAndConnection(connName string, conn Connection) *SQL {
+	sql := newSQL()
+	sql.diver = conn
+	sql.dialect = dialect.GetDialectByDriver(conn.Name())
+	sql.conn = connName
+	return sql
+}
+
+// 取得所有欄位資訊
+func (sql *SQL) ShowColumns() ([]map[string]interface{}, error) {
+	defer RecycleSQL(sql)
+	return sql.diver.QueryWithConnection(sql.conn, sql.dialect.ShowColumns(sql.TableName))
+}
+
 // 將參數設置至SQL(struct).Fields並且設置SQL(struct).Functions
 func (sql *SQL) Select(fields ...string) *SQL {
 	sql.Fields = fields

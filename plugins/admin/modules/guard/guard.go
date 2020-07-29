@@ -5,11 +5,10 @@ import (
 	"goadminapi/modules/db"
 	"goadminapi/modules/errors"
 	"goadminapi/modules/service"
-	"goadminapi/template"
-	"goadminapi/template/types"
-
 	"goadminapi/plugins/admin/modules/response"
 	"goadminapi/plugins/admin/modules/table"
+	"goadminapi/template"
+	"goadminapi/template/types"
 )
 
 type Guard struct {
@@ -17,6 +16,12 @@ type Guard struct {
 	conn      db.Connection
 	tableList table.GeneratorList
 	navBtns   *types.Buttons
+}
+
+// 取得table(interface)、prefix
+func (g *Guard) table(ctx *context.Context) (table.Table, string) {
+	prefix := ctx.Query("__prefix")
+	return g.tableList[prefix](ctx), prefix
 }
 
 // 將參數s、c、t設置至Guard(struct)後回傳

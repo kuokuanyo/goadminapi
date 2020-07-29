@@ -8,8 +8,8 @@ import (
 	"goadminapi/template/types"
 	"net/http"
 
-	"goadminapi/template"
 	"goadminapi/modules/config"
+	"goadminapi/template"
 )
 
 // 成功，回傳code:200 and msg:ok and data
@@ -18,6 +18,14 @@ func OkWithData(ctx *context.Context, data map[string]interface{}) {
 		"code": http.StatusOK,
 		"msg":  "ok",
 		"data": data,
+	})
+}
+
+// 成功，回傳code:200 and msg
+func OkWithMsg(ctx *context.Context, msg string) {
+	ctx.JSON(http.StatusOK, map[string]interface{}{
+		"code": http.StatusOK,
+		"msg":  msg,
 	})
 }
 
@@ -38,11 +46,9 @@ func Error(ctx *context.Context, msg string) {
 	})
 }
 
-// 透過參數ctx回傳目前登入的用戶(Context.UserValue["user"])並轉換成UserModel，接著將給定的數據(types.Page(struct))寫入buf(struct)並回傳，最後輸出HTML
-// 將參數desc、title、msg寫入Panel
+// 將給定的數據(types.Page(struct))寫入buf(struct)並回傳，最後輸出HTML
 func Alert(ctx *context.Context, desc, title, msg string, conn db.Connection, btns *types.Buttons,
 	pageType ...template.PageType) {
-
 	// 透過參數ctx回傳目前登入的用戶(Context.UserValue["user"])並轉換成UserModel
 	user := auth.Auth(ctx)
 
@@ -50,11 +56,9 @@ func Alert(ctx *context.Context, desc, title, msg string, conn db.Connection, bt
 	if len(pageType) > 0 {
 		pt = pageType[0]
 	}
-
+	// GetPageContentFromPageType從頁面類型取得頁面內容
 	pageTitle, description, content := template.GetPageContentFromPageType(title, desc, msg, pt)
-
-	// Get判斷templateMap(map[string]Template)的key鍵是否參數config.GetTheme()，有則回傳Template(interface)
-	// GetTemplate為Template(interface)的方法
+	// GetTemplate為Template(interface)的方法，取得模板
 	tmpl, tmplName := template.Default().GetTemplate(ctx.IsPjax())
 	buf := template.Execute(template.ExecuteParam{
 		User:     user,
@@ -72,3 +76,4 @@ func Alert(ctx *context.Context, desc, title, msg string, conn db.Connection, bt
 	})
 	ctx.HTML(http.StatusOK, buf.String())
 }
+

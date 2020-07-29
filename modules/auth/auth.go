@@ -3,10 +3,35 @@ package auth
 import (
 	"goadminapi/context"
 	"goadminapi/modules/db"
+	"goadminapi/modules/service"
 	"goadminapi/plugins/admin/models"
+	"sync"
 
 	"golang.org/x/crypto/bcrypt"
 )
+
+// CSRFToken is type of a csrf token list.
+type CSRFToken []string
+
+type TokenService struct {
+	tokens CSRFToken //[]string
+	lock   sync.Mutex
+}
+
+// 為設置Service(interface)方法
+func (s *TokenService) Name() string {
+	return "token_csrf_helper"
+}
+
+// ***************初始化*******************
+// 將token_csrf_helper加入services(map[string]Generator)
+func init() {
+	service.Register("token_csrf_helper", func() (service.Service, error) {
+		return &TokenService{
+			tokens: make(CSRFToken, 0),
+		}, nil
+	})
+}
 
 // 透過參數ctx回傳目前登入的用戶(Context.UserValue["user"])並轉換成UserModel
 func Auth(ctx *context.Context) models.UserModel {
@@ -19,9 +44,9 @@ func Check(password string, username string, conn db.Connection) (user models.Us
 	// User設置UserModel.Base.TableName(struct)並回傳設置UserModel(struct)
 	// SetConn將參數conn(db.Connection)設置至UserModel.conn(UserModel.Base.Conn)
 	user = models.User("users").SetConn(conn).FindByUserName(username)
-
 	// 判斷user是否為空
 	if user.IsEmpty() {
+
 		ok = false
 	} else {
 		// 檢查密碼
@@ -66,4 +91,23 @@ func SetCookie(ctx *context.Context, user models.UserModel, conn db.Connection) 
 	// Add將參數"user_id"、user.Id加入Session.Values後檢查是否有符合Session.Sid的資料，判斷插入或是更新資料
 	// 最後設置cookie(struct)並儲存在response header Set-Cookie中
 	return ses.Add("user_id", user.Id)
+}
+
+// 將參數s轉換成TokenService(struct)類別後回傳
+func GetTokenService(s interface{}) *TokenService {
+	if srv, ok := s.(*TokenService); ok {
+		return srv
+	}
+	panic("wrong service")
+}
+
+// 如果符合參數，將在TokenService.tokens([]string)裡將符合的toCheckToken從[]string拿出
+func (s *TokenService) CheckToken(toCheckToken string) bool {
+	for i := 0; i < len(s.tokens); i++ {
+		if (s.tokens)[i] == toCheckToken {
+			s.tokens = append((s.tokens)[:i], (s.tokens)[i+1:]...)
+			return true
+		}
+	}
+	return false
 }

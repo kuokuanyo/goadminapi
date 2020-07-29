@@ -36,6 +36,12 @@ type Field struct {
 }
 
 type PostType uint8
+
+const (
+	PostTypeCreate = iota
+	PostTypeUpdate
+)
+
 type FieldModel struct {
 	// The primaryKey of the table.
 	ID string
@@ -188,4 +194,20 @@ type InfoList []map[string]InfoItem
 type InfoItem struct {
 	Content template.HTML `json:"content"`
 	Value   string        `json:"value"`
+}
+
+// SetPrimaryKey 將參數設置至InfoPanel(struct).primaryKey中並回傳
+func (i *InfoPanel) SetPrimaryKey(name string, typ db.DatabaseType) *InfoPanel {
+	i.primaryKey = primaryKey{Name: name, Type: typ}
+	return i
+}
+
+// 判斷資料是升冪或降冪
+func (i *InfoPanel) GetSort() string {
+	switch i.Sort {
+	case 1:
+		return "asc"
+	default:
+		return "desc"
+	}
 }

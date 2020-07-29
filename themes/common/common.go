@@ -39,7 +39,7 @@ func GetImportCSSTag(src string) template.HTML {
 	}
 }
 
-// -----------------為template(interface)的方法
+// -----------------為template(interface)的方法-----------------
 func (b *BaseTheme) GetTemplate(isPjax bool) (tmpl *template.Template, name string) {
 	var err error
 

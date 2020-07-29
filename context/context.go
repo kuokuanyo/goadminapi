@@ -148,7 +148,6 @@ func (ctx *Context) Next() {
 	ctx.index++
 	// Context.Handlers類別為[]Handler，Handler類別為func(ctx *Context)
 	for s := int8(len(ctx.handlers)); ctx.index < s; ctx.index++ {
-		// 執行func(ctx *Context)
 		ctx.handlers[ctx.index](ctx)
 	}
 }
@@ -188,6 +187,16 @@ func (ctx *Context) SetContentType(contentType string) {
 // 將參數設置至Context.Response.StatusCode
 func (ctx *Context) SetStatusCode(code int) {
 	ctx.Response.StatusCode = code
+}
+
+// 判斷method是否為get以及header裡包含accept:html
+func (ctx *Context) WantHTML() bool {
+	return ctx.Method() == "GET" && strings.Contains(ctx.Headers("Accept"), "html")
+}
+
+// 判斷header裡包含accept:json
+func (ctx *Context) WantJSON() bool {
+	return strings.Contains(ctx.Headers("Accept"), "json")
 }
 
 // 取得表單的值(所有)，參數放於multipart/form-data.
@@ -245,6 +254,24 @@ func (ctx *Context) JSON(code int, Body map[string]interface{}) {
 // 判斷是否header X-PJAX:true
 func (ctx *Context) IsPjax() bool {
 	return ctx.Headers("X-PJAX") == "true"
+}
+
+// GetURL 處理URL後回傳(處理url中有:__的字串)
+func (r Router) GetURL(value ...string) string {
+	u := r.Patten
+
+	// 未處理前ex:/admin/info/:__prefix/edit
+	for i := 0; i < len(value); i += 2 {
+		// 處理url
+		u = strings.Replace(u, ":__"+value[i], value[i+1], -1)
+	}
+	// 處理後 ex:/admin/info/roles/edit
+	return u
+}
+
+// 藉由參數name取得Router(struct)，Router裡有Methods([]string)及Pattern(string)
+func (r RouterMap) Get(name string) Router {
+	return r[name]
 }
 
 // AppendReqAndResp stores the request info and handle into app.

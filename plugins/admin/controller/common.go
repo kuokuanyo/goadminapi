@@ -68,3 +68,10 @@ func aTemplate() template.Template {
 	// GetTheme return globalCfg.Theme
 	return template.Get(c.GetTheme())
 }
+
+// 透過參數name取得該路徑名稱的URL、如果參數value大於零，則處理url中有:__的字串
+func (h *Handler) routePath(name string, value ...string) string {
+	// Get藉由參數name取得Router(struct)，Router裡有Methods([]string)及Pattern(string)
+	// GetURL處理URL後回傳(處理url中有:__的字串)
+	return h.routes.Get(name).GetURL(value...)
+}

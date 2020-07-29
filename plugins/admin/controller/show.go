@@ -14,9 +14,9 @@ import (
 )
 
 func (h *Handler) ShowInfo(ctx *context.Context) {
-	prefix := ctx.Query("__prefix")
+	// prefix := ctx.Query("__prefix")
 
-	panel := h.table(prefix, ctx)
+	// panel := h.table(prefix, ctx)
 }
 
 // 處理前端檔案

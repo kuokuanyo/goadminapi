@@ -77,6 +77,11 @@ func (t Type) IsSelect() bool {
 		t == Checkbox || t == CheckboxStacked || t == CheckboxSingle
 }
 
+// 判斷t(unit8)是否符合條件，是否有多個選擇
+func (t Type) IsMultiSelect() bool {
+	return t == Select || t == SelectBox || t == Checkbox || t == CheckboxStacked
+}
+
 func (l Layout) Col() int {
 	if l == LayoutTwoCol {
 		return 2

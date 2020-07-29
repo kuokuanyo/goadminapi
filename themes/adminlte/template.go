@@ -131,8 +131,8 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
 {{end}}`, "components/alert": `{{define "alert"}}
 <div class="alert alert-{{.Theme}} alert-dismissible">
     <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-    <h4>{{langHtml .Title}}</h4>
-    {{langHtml .Content}}
+    <h4>{{ .Title}}</h4>
+    {{ .Content}}
 </div>
 {{end}}`, "components/box": `{{define "box"}}
 <div class="box box-{{.Theme}}" {{.Attr}}>
@@ -142,7 +142,7 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
         {{else}}
             <div class="box-header {{.HeadBorder}}" style="background-color: {{.HeadColor}};">
         {{end}}
-            {{langHtml .Header}}
+            {{ .Header}}
         </div>
     {{end}}
     {{if ne .SecondHeader ""}}
@@ -151,15 +151,15 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
         {{else}}
             <div class="box-header {{.SecondHeaderClass}} {{.SecondHeadBorder}}" style="background-color: {{.SecondHeadColor}};">
         {{end}}
-            {{langHtml .SecondHeader}}
+            {{ .SecondHeader}}
         </div>
     {{end}}
     <div class="box-body" {{.Style}}>
-        {{langHtml .Body}}
+        {{ .Body}}
     </div>
     {{if ne .Footer ""}}
     <div class="box-footer clearfix">
-        {{langHtml .Footer}}
+        {{ .Footer}}
     </div>
     {{end}}
 </div>
@@ -171,7 +171,7 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
             {{else}}
                 <button type="{{.Type}}" class="btn {{.Size}} btn-{{.Theme}}">
             {{end}}
-                {{langHtml .Content}}
+                {{ .Content}}
             </button>
         {{else}}
             {{if ne .LoadingText ""}}
@@ -179,12 +179,12 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
             {{else}}
                 <a href="{{.Href}}" type="{{.Type}}" class="btn {{.Size}} btn-{{.Theme}}">
             {{end}}
-                {{langHtml .Content}}
+                {{ .Content}}
             </a>
         {{end}}
     </div>
 {{end}}`, "components/col": `{{define "col"}}
-<div class="{{.Size}}">{{langHtml .Content}}</div>
+<div class="{{.Size}}">{{ .Content}}</div>
 {{end}}`, "components/form/array": `{{define "form_array"}}
 <table class="table table-hover">
   <tbody class="{{.Field}}-table">
@@ -1297,7 +1297,7 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
         <img src="{{.Src}}" width="{{.Width}}" height="{{.Height}}">
     {{end}}
 {{end}}`, "components/label": `{{define "label"}}
-<span class="label label-{{.Type}}" style="background-color: {{.Color}};">{{langHtml .Content}}</span>
+<span class="label label-{{.Type}}" style="background-color: {{.Color}};">{{ .Content}}</span>
 {{end}}`, "components/link": `{{define "link"}}
     <a class="{{.Class}}" {{.Attributes}} data-title="{{.Title}}" href="{{.URL}}">{{.Content}}</a>
 {{end}}`, "components/paginator": `{{define "paginator"}}
@@ -1367,19 +1367,19 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
     <div class="modal-dialog modal-{{.Size}}" role="document" style="{{if ne .Width ""}}width:{{.Width}};{{end}}">
         <div class="modal-content" style="{{if ne .Width ""}}width:{{.Width}};{{end}}">
             <div class="modal-header">
-                <h5 class="modal-title" id="{{.ID}}Title">{{langHtml .Title}}</h5>
+                <h5 class="modal-title" id="{{.ID}}Title">{{ .Title}}</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body" style="{{if ne .Height ""}}height:{{.Height}};{{end}}">
-                {{langHtml .Body}}
+                {{ .Body}}
             </div>
             {{if not .HideFooter}}
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">{{lang "Close"}}</button>
                     {{if .Footer}}
-                    <button type="button" class="btn btn-primary">{{langHtml .Footer}}</button>
+                    <button type="button" class="btn btn-primary">{{ .Footer}}</button>
                     {{end}}
                 </div>
             {{end}}
@@ -1405,7 +1405,7 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
         </script>
     {{end}}
 {{end}}`, "components/row": `{{define "row"}}
-<div class="row">{{langHtml .Content}}</div>
+<div class="row">{{ .Content}}</div>
 {{end}}`, "components/table/box-header": `{{define "box-header"}}
     <div class="pull-right">
 
@@ -2346,8 +2346,8 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
     {{if ne .Panel.Title ""}}
         <section class="content-header">
             <h1>
-                {{langHtml .Panel.Title}}
-                <small>{{langHtml .Panel.Description}}</small>
+                {{ .Panel.Title}}
+                <small>{{ .Panel.Description}}</small>
             </h1>
             <ol class="breadcrumb" style="margin-right: 30px;">
                 <li><a href="{{.IndexUrl}}"><i class="fa fa-dashboard"></i> {{lang "home"}}</a></li>
