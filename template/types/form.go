@@ -1,7 +1,10 @@
 package types
 
 import (
+	"encoding/json"
+	"fmt"
 	"html/template"
+	"strings"
 
 	"goadminapi/modules/db"
 
@@ -155,6 +158,59 @@ type FormPanel struct {
 type GroupFormFields []FormFields
 type GroupFieldHeaders []string
 
+// 預設FormPanel(struct)
+func NewFormPanel() *FormPanel {
+	return &FormPanel{
+		curFieldListIndex: -1,
+		Callbacks:         make(Callbacks, 0),
+		Layout:            form2.LayoutDefault,
+	}
+}
+
+//  AddField 添加表單欄位資訊至FormPanel.FieldList並處理不同表單欄位類型的選項
+func (f *FormPanel) AddField(head, field string, filedType db.DatabaseType, formType form2.Type) *FormPanel {
+	f.FieldList = append(f.FieldList, FormField{
+		Head:        head,
+		Field:       field,
+		FieldClass:  field,
+		TypeName:    filedType,
+		Editable:    true,
+		Hide:        false,
+		TableFields: make(FormFields, 0),
+		Placeholder: "輸入" + " " + head,
+		FormType:    formType,
+		FieldDisplay: FieldDisplay{
+			Display: func(value FieldModel) interface{} {
+				return value.Value
+			},
+			DisplayProcessChains: chooseDisplayProcessChains(f.processChains),
+		},
+	})
+	f.curFieldListIndex++
+
+	// GetDefaultOptions 不同表單欄位類型設置不同選項
+	op1, op2, js := formType.GetDefaultOptions(field)
+	f.FieldOptionExt(op1)
+	f.FieldOptionExt2(op2)
+	f.FieldOptionExtJS(js)
+
+	// setDefaultDisplayFnOfFormType 設置表單類型函式
+	setDefaultDisplayFnOfFormType(f, formType)
+	return f
+}
+
+// 將參數name、type設置至FormPanel.primaryKey後回傳
+func (f *FormPanel) SetPrimaryKey(name string, typ db.DatabaseType) *FormPanel {
+	f.primaryKey = primaryKey{Name: name, Type: typ}
+	return f
+}
+
+// AddXssJsFilter添加func(value FieldModel) interface{}至參數i.processChains([]FieldFilterFn)
+func (f *FormPanel) AddXssJsFilter() *FormPanel {
+	f.processChains = addXssJsFilter(f.processChains)
+	return f
+}
+
 // 判斷FormFields[i].Field是否存在參數field，存在則回傳FormFields[i](FormField)
 func (f FormFields) FindByFieldName(field string) *FormField {
 	for i := 0; i < len(f); i++ {
@@ -164,3 +220,65 @@ func (f FormFields) FindByFieldName(field string) *FormField {
 	}
 	return nil
 }
+
+// 設置FormPanel.FieldList[].OptionExt(選項)
+func (f *FormPanel) FieldOptionExt(m map[string]interface{}) *FormPanel {
+	if m == nil {
+		return f
+	}
+	if f.FieldList[f.curFieldListIndex].FormType.IsCode() {
+		f.FieldList[f.curFieldListIndex].OptionExt = template.JS(fmt.Sprintf(`
+	theme = "%s";
+	font_size = %s;
+	language = "%s";
+	options = %s;
+`, m["theme"], m["font_size"], m["language"], m["options"]))
+		return f
+	}
+
+	m = f.FieldList[f.curFieldListIndex].FormType.FixOptions(m)
+	s, _ := json.Marshal(m)
+
+	if f.FieldList[f.curFieldListIndex].OptionExt != template.JS("") {
+		ss := string(f.FieldList[f.curFieldListIndex].OptionExt)
+		ss = strings.Replace(ss, "}", "", strings.Count(ss, "}"))
+		ss = strings.TrimRight(ss, " ")
+		ss += ","
+		f.FieldList[f.curFieldListIndex].OptionExt = template.JS(ss) + template.JS(strings.Replace(string(s), "{", "", 1))
+	} else {
+		f.FieldList[f.curFieldListIndex].OptionExt = template.JS(string(s))
+	}
+
+	return f
+}
+
+// 設置FormPanel.FieldList[].OptionExt2(選項)
+func (f *FormPanel) FieldOptionExt2(m map[string]interface{}) *FormPanel {
+	if m == nil {
+		return f
+	}
+
+	m = f.FieldList[f.curFieldListIndex].FormType.FixOptions(m)
+	s, _ := json.Marshal(m)
+
+	if f.FieldList[f.curFieldListIndex].OptionExt2 != template.JS("") {
+		ss := string(f.FieldList[f.curFieldListIndex].OptionExt2)
+		ss = strings.Replace(ss, "}", "", strings.Count(ss, "}"))
+		ss = strings.TrimRight(ss, " ")
+		ss += ","
+		f.FieldList[f.curFieldListIndex].OptionExt2 = template.JS(ss) + template.JS(strings.Replace(string(s), "{", "", 1))
+	} else {
+		f.FieldList[f.curFieldListIndex].OptionExt2 = template.JS(string(s))
+	}
+
+	return f
+}
+
+// 設置FormPanel.FieldList[].OptionExt(選項)
+func (f *FormPanel) FieldOptionExtJS(js template.JS) *FormPanel {
+	if js != template.JS("") {
+		f.FieldList[f.curFieldListIndex].OptionExt = js
+	}
+	return f
+}
+

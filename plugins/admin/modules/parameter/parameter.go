@@ -117,3 +117,26 @@ func GetParamFromURL(urlStr string, defaultPageSize int, defaultSortType, primar
 
 	return GetParam(u, defaultPageSize, primaryKey, defaultSortType)
 }
+
+// 將Parameters(struct)的鍵與值加入至url.Values(map[string][]string)
+func (param Parameters) GetFixedParamStr() url.Values {
+	p := url.Values{}
+	p.Add("__sort", param.SortField)
+	p.Add("__pageSize", param.PageSize)
+	p.Add("__sort_type", param.SortType)
+	if len(param.Columns) > 0 {
+		p.Add("__columns", strings.Join(param.Columns, ","))
+	}
+	for key, value := range param.Fields {
+		p[key] = value
+	}
+	return p
+}
+
+
+// 處理url後(?...)的部分(頁面設置、排序方式....等)
+func (param Parameters) GetRouteParamStr() string {
+	p := param.GetFixedParamStr()
+	p.Add("__page", param.Page)
+	return "?" + p.Encode()
+}

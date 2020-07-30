@@ -2,6 +2,7 @@ package controller
 
 import (
 	c "goadminapi/modules/config"
+	"regexp"
 
 	"goadminapi/context"
 	"goadminapi/modules/db"
@@ -49,6 +50,18 @@ func New(cfg ...Config) *Handler {
 	}
 }
 
+func isNewUrl(s string, p string) bool {
+	reg, _ := regexp.Compile("(.*?)info/" + p + "/new")
+
+	return reg.MatchString(s)
+}
+// 判斷templateMap(map[string]Template)的key鍵是否參數globalCfg.Theme，有則回傳Template(interface)
+func aTemplate() template.Template {
+	// 判斷templateMap(map[string]Template)的key鍵是否參數globalCfg.Theme，有則回傳Template(interface)
+	// GetTheme return globalCfg.Theme
+	return template.Get(c.GetTheme())
+}
+
 // 將參數(r)設置至Handler.routes
 func (h *Handler) SetRoutes(r context.RouterMap) {
 	h.routes = r
@@ -62,16 +75,15 @@ func (h *Handler) UpdateCfg(cfg Config) {
 	h.generators = cfg.Generators
 }
 
-// 判斷templateMap(map[string]Template)的key鍵是否參數globalCfg.Theme，有則回傳Template(interface)
-func aTemplate() template.Template {
-	// 判斷templateMap(map[string]Template)的key鍵是否參數globalCfg.Theme，有則回傳Template(interface)
-	// GetTheme return globalCfg.Theme
-	return template.Get(c.GetTheme())
-}
 
 // 透過參數name取得該路徑名稱的URL、如果參數value大於零，則處理url中有:__的字串
 func (h *Handler) routePath(name string, value ...string) string {
 	// Get藉由參數name取得Router(struct)，Router裡有Methods([]string)及Pattern(string)
 	// GetURL處理URL後回傳(處理url中有:__的字串)
 	return h.routes.Get(name).GetURL(value...)
+}
+
+// 透過參數name取得該路徑名稱的URL，將url中的:__prefix改成第二個參數(prefix)
+func (h *Handler) routePathWithPrefix(name string, prefix string) string {
+	return h.routePath(name, "prefix", prefix)
 }

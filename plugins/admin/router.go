@@ -28,7 +28,7 @@ func (admin *Admin) initRouter() *Admin {
 
 	authPrefixRoute := route.Group("/", auth.Middleware(admin.Conn), admin.guardian.CheckPrefix)
 	authPrefixRoute.GET("/info/:__prefix", admin.handler.ShowInfo).Name("info")
-	// *************還有前端函式還沒處理showNewForm********************
+	// *************還有前端函式還沒處理showNewForm、showTable********************
 	authPrefixRoute.POST("/new/:__prefix", admin.guardian.NewForm, admin.handler.NewForm).Name("new")
 
 	admin.App = app

@@ -37,6 +37,7 @@ func New(s service.List, c db.Connection, t table.GeneratorList) *Guard {
 // 查詢url裡的參數(__prefix)
 func (g *Guard) CheckPrefix(ctx *context.Context) {
 	prefix := ctx.Query("__prefix")
+
 	if _, ok := g.tableList[prefix]; !ok {
 		if ctx.Headers("X-PJAX") == "" && ctx.Method() != "GET" {
 			response.BadRequest(ctx, errors.Msg)

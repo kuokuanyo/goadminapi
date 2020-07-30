@@ -37,6 +37,36 @@ func (tb *DefaultTable) sql() *db.SQL {
 	return nil
 }
 
+// NewDefaultTable 將參數值設置至預設DefaultTable(struct)
+func NewDefaultTable(cfgs ...Config) Table {
+	var cfg Config
+	if len(cfgs) > 0 && cfgs[0].PrimaryKey.Name != "" {
+		cfg = cfgs[0]
+	} else {
+		cfg = DefaultConfig()
+	}
+	return &DefaultTable{
+		BaseTable: &BaseTable{
+			Info:           types.NewInfoPanel(cfg.PrimaryKey.Name), // 預設InfoPanel(struct)
+			Form:           types.NewFormPanel(), // 預設FormPanel(struct)
+			Detail:         types.NewInfoPanel(cfg.PrimaryKey.Name),
+			CanAdd:         cfg.CanAdd,
+			Editable:       cfg.Editable,
+			Deletable:      cfg.Deletable,
+			Exportable:     cfg.Exportable,
+			PrimaryKey:     cfg.PrimaryKey,
+			OnlyNewForm:    cfg.OnlyNewForm,
+			OnlyUpdateForm: cfg.OnlyUpdateForm,
+			OnlyDetail:     cfg.OnlyDetail,
+			OnlyInfo:       cfg.OnlyInfo,
+		},
+		connectionDriver: cfg.Driver,
+		connection:       cfg.Connection,
+		sourceURL:        cfg.SourceURL,
+		getDataFun:       cfg.GetDataFun,
+	}
+}
+
 //-----------------------------table(interface)的方法--------------------------------
 // InsertData insert data.
 func (tb *DefaultTable) InsertData(dataList form.Values) error {

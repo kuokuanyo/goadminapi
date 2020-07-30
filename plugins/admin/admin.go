@@ -38,21 +38,20 @@ func (admin *Admin) InitPlugin(services service.List) {
 	c := config.GetService(services.Get("config"))
 
 	//------------------------------------------------
-	// 將參數設置至SystemTable(struct)後回傳
-	// st := table.NewSystemTable(admin.Conn, c)
+	// 將參數設置至SystemTable(struct)
+	st := table.NewSystemTable(admin.Conn, c)
 
-	// // GeneratorList類別為map[string]Generator，Generator類別為func(ctx *context.Context) Table
-	// // Combine透過參數判斷GeneratorList已經有該key、value，如果不存在則加入該鍵與值
-	// admin.tableList.Combine(table.GeneratorList{
-	// 	"manager":        st.GetManagerTable,
-	// 	"permission":     st.GetPermissionTable,
-	// 	"roles":          st.GetRolesTable,
-	// 	"op":             st.GetOpTable,
-	// 	"menu":           st.GetMenuTable,
-	// 	"normal_manager": st.GetNormalManagerTable,
-	// 	"site":           st.GetSiteTable,
-	// 	"generate":       st.GetGenerateForm,
-	// })
+	// Combine透過參數判斷GeneratorList已經有該key、value，如果不存在則加入該鍵與值
+	admin.tableList.Combine(table.GeneratorList{
+		"manager":        st.GetManagerTable,
+		// "permission":     st.GetPermissionTable,
+		// "roles":          st.GetRolesTable,
+		// "op":             st.GetOpTable,
+		// "menu":           st.GetMenuTable,
+		// "normal_manager": st.GetNormalManagerTable,
+		// "site":           st.GetSiteTable,
+		// "generate":       st.GetGenerateForm,
+	})
 	//------------------------------------------------
 
 	// 將參數admin.Services, admin.Conn, admin.tableList設置Admin.guardian(struct)後回傳

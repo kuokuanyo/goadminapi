@@ -147,7 +147,7 @@ type Template interface {
 	// Popup() types.PopupAttribute
 	// Box() types.BoxAttribute
 
-	// Label() types.LabelAttribute
+	Label() types.LabelAttribute
 	// Image() types.ImgAttribute
 
 	// Button() types.ButtonAttribute
@@ -332,4 +332,8 @@ func GetPageContentFromPageType(title, desc, msg string, pt PageType) (template.
 			return "", "", Default().Get500HTML()
 		}
 	}
+}
+
+func HTML(s string) template.HTML {
+	return template.HTML(s)
 }

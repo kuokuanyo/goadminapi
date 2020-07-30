@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"regexp"
 	"strings"
@@ -58,6 +59,7 @@ func (db *Mysql) InitDB(cfgs map[string]config.Database) Connection {
 	return db
 }
 
+// -------------connection(interface)的所有方法--------------------------
 // 沒有給定連接(conn)名稱，透過參數查詢db.DbList["default"]資料並回傳
 func (db *Mysql) Query(query string, args ...interface{}) ([]map[string]interface{}, error) {
 	// CommonQuery查詢資料並回傳
@@ -89,6 +91,14 @@ func (db *Mysql) QueryWithTx(tx *sql.Tx, query string, args ...interface{}) ([]m
 func (db *Mysql) ExecWithTx(tx *sql.Tx, query string, args ...interface{}) (sql.Result, error) {
 	return CommonExecWithTx(tx, query, args...)
 }
+
+// BeginTxAndConnection 透過LevelDefault and connection取得Tx(struct)
+func (db *Mysql) BeginTxAndConnection(conn string) *sql.Tx {
+	return CommonBeginTxWithLevel(db.DbList[conn], sql.LevelDefault)
+}
+
+// -------------connection(interface)的所有方法--------------------------
+
 
 // 與CommonQuery一樣(差別在tx執行)
 func CommonQueryWithTx(tx *sql.Tx, query string, args ...interface{}) ([]map[string]interface{}, error) {
@@ -211,7 +221,7 @@ func CommonQuery(db *sql.DB, query string, args ...interface{}) ([]map[string]in
 	return results, nil
 }
 
-// 執行sql命令
+// CommonExec 執行sql命令
 func CommonExec(db *sql.DB, query string, args ...interface{}) (sql.Result, error) {
 
 	rs, err := db.Exec(query, args...)
@@ -219,4 +229,13 @@ func CommonExec(db *sql.DB, query string, args ...interface{}) (sql.Result, erro
 		return nil, err
 	}
 	return rs, nil
+}
+
+// CommonBeginTxWithLevel 透過LevelDefault and connection取得Tx(struct)
+func CommonBeginTxWithLevel(db *sql.DB, level sql.IsolationLevel) *sql.Tx {
+	tx, err := db.BeginTx(context.Background(), &sql.TxOptions{Isolation: level})
+	if err != nil {
+		panic(err)
+	}
+	return tx
 }

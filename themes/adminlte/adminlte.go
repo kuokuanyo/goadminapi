@@ -45,4 +45,3 @@ func (t *Theme) GetAsset(path string) ([]byte, error) {
 	box := packr.New("adminlte", "./resource/assets/dist")
 	return box.Find(path)
 }
-

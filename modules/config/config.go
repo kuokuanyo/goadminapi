@@ -455,6 +455,7 @@ func GetTheme() string {
 	return globalCfg.Theme
 }
 
+
 // 將Config.Databases[key].Driver設置至Config.Databases[key]後回傳(迴圈)
 func (c *Config) EraseSens() *Config {
 	for key := range c.Databases {

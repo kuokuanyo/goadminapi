@@ -31,8 +31,17 @@ func RemoveBlankFromArray(s []string) []string {
 	return r
 }
 
+// 判斷條件，true return a，false return b
+func AorB(condition bool, a, b string) string {
+	if condition {
+		return a
+	}
+	return b
+}
+
 func Uuid() string {
 	uid, _ := uuid.NewV4()
 	rst := uid.String()
 	return rst
 }
+

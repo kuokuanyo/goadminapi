@@ -19,6 +19,9 @@ type SQL struct {
 	tx                   *dbsql.Tx
 }
 
+// TxFn is the transaction callback function.
+type TxFn func(tx *dbsql.Tx) (error, map[string]interface{})
+
 // 回傳sql元件
 var SQLPool = sync.Pool{
 	New: func() interface{} {
@@ -334,6 +337,36 @@ func (sql *SQL) OrderBy(fields ...string) *SQL {
 		sql.Order += " " + sql.wrap(fields[i]) + " and "
 	}
 	return sql
+}
+
+// WithTx 將參數設置至SQL.tx
+func (sql *SQL) WithTx(tx *dbsql.Tx) *SQL {
+	sql.tx = tx
+	return sql
+}
+
+
+// 取得tx(struct)，會持續並行Rollback、commit
+func (sql *SQL) WithTransaction(fn TxFn) (res map[string]interface{}, err error) {
+
+	tx := sql.diver.BeginTxAndConnection(sql.conn)
+
+	defer func() {
+		if p := recover(); p != nil {
+			// a panic occurred, rollback and repanic
+			_ = tx.Rollback()
+			panic(p)
+		} else if err != nil {
+			// something went wrong, rollback
+			_ = tx.Rollback()
+		} else {
+			// all good, commit
+			err = tx.Commit()
+		}
+	}()
+
+	err, res = fn(tx)
+	return
 }
 
 // 將SQL(struct)資訊清除
