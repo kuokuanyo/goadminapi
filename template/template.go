@@ -148,7 +148,7 @@ type Template interface {
 	// Box() types.BoxAttribute
 
 	Label() types.LabelAttribute
-	// Image() types.ImgAttribute
+	Image() types.ImgAttribute
 
 	// Button() types.ButtonAttribute
 

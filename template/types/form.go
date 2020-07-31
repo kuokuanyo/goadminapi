@@ -70,9 +70,9 @@ type FormField struct {
 	CustomJs      template.JS   `json:"custom_js"`
 	CustomCss     template.CSS  `json:"custom_css"`
 
-	Editable    bool `json:"editable"`
-	NotAllowAdd bool `json:"not_allow_add"`
-	Must        bool `json:"must"`
+	Editable    bool `json:"editable"` // 允許編輯
+	NotAllowAdd bool `json:"not_allow_add"` // 不允許增加
+	Must        bool `json:"must"` // 該欄位必填
 	Hide        bool `json:"hide"`
 
 	Width int `json:"width"`
@@ -80,12 +80,12 @@ type FormField struct {
 	InputWidth int `json:"input_width"`
 	HeadWidth  int `json:"head_width"`
 
-	Joins Joins `json:"-"`
+	Joins Joins `json:"-"` 
 
 	Divider      bool   `json:"divider"`
 	DividerTitle string `json:"divider_title"`
 
-	HelpMsg template.HTML `json:"help_msg"`
+	HelpMsg template.HTML `json:"help_msg"` // 欄位提示訊息
 
 	TableFields FormFields
 
@@ -105,7 +105,7 @@ type Responder func(ctx *context.Context)
 
 // FormPanel
 type FormPanel struct {
-	FieldList         FormFields
+	FieldList         FormFields // 表單欄位資訊
 	curFieldListIndex int
 
 	// Warn: may be deprecated in the future.
@@ -167,6 +167,21 @@ func NewFormPanel() *FormPanel {
 	}
 }
 
+func (f *FormPanel) SetTable(table string) *FormPanel {
+	f.Table = table
+	return f
+}
+
+func (f *FormPanel) SetTitle(title string) *FormPanel {
+	f.Title = title
+	return f
+}
+
+func (f *FormPanel) SetDescription(desc string) *FormPanel {
+	f.Description = desc
+	return f
+}
+
 //  AddField 添加表單欄位資訊至FormPanel.FieldList並處理不同表單欄位類型的選項
 func (f *FormPanel) AddField(head, field string, filedType db.DatabaseType, formType form2.Type) *FormPanel {
 	f.FieldList = append(f.FieldList, FormField{
@@ -205,12 +220,6 @@ func (f *FormPanel) SetPrimaryKey(name string, typ db.DatabaseType) *FormPanel {
 	return f
 }
 
-// AddXssJsFilter添加func(value FieldModel) interface{}至參數i.processChains([]FieldFilterFn)
-func (f *FormPanel) AddXssJsFilter() *FormPanel {
-	f.processChains = addXssJsFilter(f.processChains)
-	return f
-}
-
 // 判斷FormFields[i].Field是否存在參數field，存在則回傳FormFields[i](FormField)
 func (f FormFields) FindByFieldName(field string) *FormField {
 	for i := 0; i < len(f); i++ {
@@ -219,6 +228,94 @@ func (f FormFields) FindByFieldName(field string) *FormField {
 		}
 	}
 	return nil
+}
+
+// FieldMust 該表單欄位必填
+func (f *FormPanel) FieldMust() *FormPanel {
+	f.FieldList[f.curFieldListIndex].Must = true
+	return f
+}
+
+// FieldNotAllowAdd 該表單欄位不允許增加
+func (f *FormPanel) FieldNotAllowAdd() *FormPanel {
+	f.FieldList[f.curFieldListIndex].NotAllowAdd = true
+	return f
+}
+
+// FieldNotAllowEdit 該表單欄位不能編輯
+func (f *FormPanel) FieldNotAllowEdit() *FormPanel {
+	f.FieldList[f.curFieldListIndex].Editable = false
+	return f
+}
+
+// FieldHelpMsg 增加提示資訊
+func (f *FormPanel) FieldHelpMsg(s template.HTML) *FormPanel {
+	f.FieldList[f.curFieldListIndex].HelpMsg = s
+	return f
+}
+
+// FieldOptions 欄位選項
+func (f *FormPanel) FieldOptions(options FieldOptions) *FormPanel {
+	f.FieldList[f.curFieldListIndex].Options = options
+	return f
+}
+
+// FieldOptionsFromTable 設置表單欄位的選項，第二個參數為顯示的選項名稱
+func (f *FormPanel) FieldOptionsFromTable(table, textFieldName, valueFieldName string, process ...OptionTableQueryProcessFn) *FormPanel {
+	var fn OptionTableQueryProcessFn
+	if len(process) > 0 {
+		fn = process[0]
+	}
+	f.FieldList[f.curFieldListIndex].OptionTable = OptionTable{
+		Table:          table,
+		TextField:      textFieldName,
+		ValueField:     valueFieldName,
+		QueryProcessFn: fn,
+	}
+
+	return f
+}
+
+// FieldDisplay 將參數(函式)添加至FormPanel.FieldList[].Display
+func (f *FormPanel) FieldDisplay(filter FieldFilterFn) *FormPanel {
+	f.FieldList[f.curFieldListIndex].Display = filter
+	return f
+}
+
+// FieldPostFilterFn 添加函式func(value PostFieldModel) interface{}
+func (f *FormPanel) FieldPostFilterFn(post PostFieldFilterFn) *FormPanel {
+	f.FieldList[f.curFieldListIndex].PostFilterFn = post
+	return f
+}
+
+// SetInsertFn 設置新增函式
+func (f *FormPanel) SetInsertFn(fn FormPostFn) *FormPanel {
+	f.InsertFn = fn
+	return f
+}
+
+// SetUpdateFn 設置更新函式
+func (f *FormPanel) SetUpdateFn(fn FormPostFn) *FormPanel {
+	f.UpdateFn = fn
+	return f
+}
+
+// SetPostValidator 新增函式func(values form.Values) error至FormPanel.Validator
+func (f *FormPanel) SetPostValidator(va FormPostFn) *FormPanel {
+	f.Validator = va
+	return f
+}
+
+// SetPostHook 新增函式func(values form.Values) error至FormPanel.PostHook
+func (f *FormPanel) SetPostHook(fn FormPostFn) *FormPanel {
+	f.PostHook = fn
+	return f
+}
+
+// AddXssJsFilter添加func(value FieldModel) interface{}至參數i.processChains([]FieldFilterFn)
+func (f *FormPanel) AddXssJsFilter() *FormPanel {
+	f.processChains = addXssJsFilter(f.processChains)
+	return f
 }
 
 // 設置FormPanel.FieldList[].OptionExt(選項)
@@ -281,4 +378,3 @@ func (f *FormPanel) FieldOptionExtJS(js template.JS) *FormPanel {
 	}
 	return f
 }
-

@@ -1,7 +1,6 @@
 package guard
 
 import (
-	"fmt"
 	"goadminapi/context"
 	"goadminapi/plugins/admin/modules/form"
 	"goadminapi/plugins/admin/modules/parameter"
@@ -31,13 +30,11 @@ func (e NewFormParam) Value() form.Values {
 }
 
 func (g *Guard) NewForm(ctx *context.Context) {
-	fmt.Println("0000000000000000000000000")
 	previous := ctx.FormValue("__previous_")
-	fmt.Println("111111111111111111")
-	fmt.Println(previous)
+
 	// 取得table(interface)、prefix
 	panel, prefix := g.table(ctx)
-	fmt.Println("222222222222222222")
+
 	// 取得匹配的service.Service然後轉換成Connection(interface)
 	// conn := db.GetConnection(g.services)
 
@@ -52,7 +49,7 @@ func (g *Guard) NewForm(ctx *context.Context) {
 	param := parameter.GetParamFromURL(previous, panel.GetInfo().DefaultPageSize,
 		// GetPrimaryKey回傳BaseTable.PrimaryKey
 		panel.GetInfo().GetSort(), panel.GetPrimaryKey().Name)
-		fmt.Println("33333333333333333333")
+
 	// 判斷參數是否是info url(true)
 	fromList := isInfoUrl(previous)
 
@@ -73,7 +70,6 @@ func (g *Guard) NewForm(ctx *context.Context) {
 		FromList:     fromList,
 	})
 	ctx.Next()
-	fmt.Println("4444444444444444")
 }
 
 func GetNewFormParam(ctx *context.Context) *NewFormParam {

@@ -1,12 +1,15 @@
 package models
 
 import (
+	"database/sql"
 	"goadminapi/modules/config"
 	"goadminapi/modules/db"
 	"goadminapi/modules/db/dialect"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
+	"time"
 )
 
 type UserModel struct {
@@ -35,6 +38,13 @@ func User(tablename string) UserModel {
 func (t UserModel) SetConn(con db.Connection) UserModel {
 	t.Conn = con
 	return t
+}
+
+// 透過參數取得UserModel(struct)
+func UserWithId(id string) UserModel {
+	idInt, _ := strconv.Atoi(id)
+	// GetAuthUserTable return globalCfg.AuthUserTable
+	return UserModel{Base: Base{TableName: config.GetAuthUserTable()}, Id: int64(idInt)}
 }
 
 // 透過參數(id)取得UserModel(struct)，將值設置至UserModel
@@ -140,6 +150,109 @@ func (t UserModel) WithPermissions() UserModel {
 		t.Permissions = append(t.Permissions, Permission().MapToModel(permissions[i]))
 	}
 
+	return t
+}
+
+// New create a user model.
+func (t UserModel) New(username, password, name, avatar string) (UserModel, error) {
+
+	id, err := t.WithTx(t.Tx).Table(t.TableName).Insert(dialect.H{
+		"username": username,
+		"password": password,
+		"name":     name,
+		"avatar":   avatar,
+	})
+
+	t.Id = id
+	t.UserName = username
+	t.Password = password
+	t.Avatar = avatar
+	t.Name = name
+
+	return t, err
+}
+
+// CheckRoleId check the role of the user model.
+func (t UserModel) CheckRoleId(roleId string) bool {
+	checkRole, _ := t.Table("role_users").
+		Where("role_id", "=", roleId).
+		Where("user_id", "=", t.Id).
+		First()
+	return checkRole != nil
+}
+
+// CheckPermissionById check the permission of the user.
+func (t UserModel) CheckPermissionById(permissionId string) bool {
+	checkPermission, _ := t.Table("user_permissions").
+		Where("permission_id", "=", permissionId).
+		Where("user_id", "=", t.Id).
+		First()
+	return checkPermission != nil
+}
+
+// AddRole add a role of the user model.
+func (t UserModel) AddRole(roleId string) (int64, error) {
+	if roleId != "" {
+		if !t.CheckRoleId(roleId) {
+			return t.WithTx(t.Tx).Table("role_users").
+				Insert(dialect.H{
+					"role_id": roleId,
+					"user_id": t.Id,
+				})
+		}
+	}
+	return 0, nil
+}
+
+// AddPermission add a permission of the user model.
+func (t UserModel) AddPermission(permissionId string) (int64, error) {
+	if permissionId != "" {
+		if !t.CheckPermissionById(permissionId) {
+			return t.WithTx(t.Tx).Table("user_permissions").
+				Insert(dialect.H{
+					"permission_id": permissionId,
+					"user_id":       t.Id,
+				})
+		}
+	}
+	return 0, nil
+}
+
+// Update update data
+func (t UserModel) Update(username, password, name, avatar string) (int64, error) {
+	fieldValues := dialect.H{
+		"username":   username,
+		"name":       name,
+		"avatar":     avatar,
+		"updated_at": time.Now().Format("2006-01-02 15:04:05"),
+	}
+
+	if password != "" {
+		fieldValues["password"] = password
+	}
+
+	return t.WithTx(t.Tx).Table(t.TableName).
+		Where("id", "=", t.Id).
+		Update(fieldValues)
+}
+
+// DeleteRoles delete roles by id
+func (t UserModel) DeleteRoles() error {
+	return t.Table("role_users").
+		Where("user_id", "=", t.Id).
+		Delete()
+}
+
+// DeletePermissions delete all the permissions of the user model.
+func (t UserModel) DeletePermissions() error {
+	return t.WithTx(t.Tx).Table("user_permissions").
+		Where("user_id", "=", t.Id).
+		Delete()
+}
+
+// WithTx 將參數設置至UserModel.Tx
+func (t UserModel) WithTx(tx *sql.Tx) UserModel {
+	t.Tx = tx
 	return t
 }
 

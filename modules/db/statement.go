@@ -346,7 +346,7 @@ func (sql *SQL) WithTx(tx *dbsql.Tx) *SQL {
 }
 
 
-// 取得tx(struct)，會持續並行Rollback、commit
+// WithTransaction 取得tx(struct)，會持續並行Rollback、commit
 func (sql *SQL) WithTransaction(fn TxFn) (res map[string]interface{}, err error) {
 
 	tx := sql.diver.BeginTxAndConnection(sql.conn)

@@ -59,7 +59,7 @@ type FormInfo struct {
 
 type Table interface {
 	GetInfo() *types.InfoPanel
-	// GetDetail() *types.InfoPanel
+	GetDetail() *types.InfoPanel
 	// GetDetailFromInfo() *types.InfoPanel
 	GetForm() *types.FormPanel
 
@@ -126,15 +126,21 @@ func SetServices(srv service.List) {
 }
 
 // ------------------------table(interface)的方法---------------------
+
 // GetInfo 將參數值設置至base.Info(InfoPanel(struct)).primaryKey
 func (base *BaseTable) GetInfo() *types.InfoPanel {
 	return base.Info.SetPrimaryKey(base.PrimaryKey.Name, base.PrimaryKey.Type)
 }
 
-// return BaseTable.PrimaryKey(struct)
+// GetPrimaryKey return BaseTable.PrimaryKey(struct)
 func (base *BaseTable) GetPrimaryKey() PrimaryKey { return base.PrimaryKey }
 
-// 將參數值設置至BaseTable.Form(FormPanel(struct)).primaryKey
+// GetForm 將參數值設置至BaseTable.Form(FormPanel(struct)).primaryKey
 func (base *BaseTable) GetForm() *types.FormPanel {
 	return base.Form.SetPrimaryKey(base.PrimaryKey.Name, base.PrimaryKey.Type)
+}
+
+// GetDetail 將參數值設置至base.Detail(InfoPanel(struct)).primaryKey中後回傳InfoPanel(struct)
+func (base *BaseTable) GetDetail() *types.InfoPanel {
+	return base.Detail.SetPrimaryKey(base.PrimaryKey.Name, base.PrimaryKey.Type)
 }

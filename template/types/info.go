@@ -366,3 +366,15 @@ func (i *InfoPanel) GetSort() string {
 		return "desc"
 	}
 }
+
+// *****************FieldModelValue([]string)的方法*******************
+
+// return FieldModelValue[0]
+func (r FieldModelValue) First() string {
+	return r[0]
+}
+
+// return FieldModelValue[0]
+func (r FieldModelValue) Value() string {
+	return r.First()
+}

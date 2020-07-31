@@ -1,6 +1,9 @@
 package models
 
-import "strings"
+import (
+	"goadminapi/modules/db"
+	"strings"
+)
 
 type PermissionModel struct {
 	Base
@@ -13,12 +16,17 @@ type PermissionModel struct {
 	UpdatedAt  string
 }
 
-// 初始化permission model
+// Permission 初始化PermissionModel
 func Permission() PermissionModel {
 	return PermissionModel{Base: Base{TableName: "permissions"}}
 }
 
-// 將map設置至permission model
+func (t PermissionModel) SetConn(con db.Connection) PermissionModel {
+	t.Conn = con
+	return t
+}
+
+// MapToModel 將map設置至permission model
 func (t PermissionModel) MapToModel(m map[string]interface{}) PermissionModel {
 	t.Id = m["id"].(int64)
 	t.Name, _ = m["name"].(string)
@@ -36,4 +44,17 @@ func (t PermissionModel) MapToModel(m map[string]interface{}) PermissionModel {
 	t.CreatedAt, _ = m["created_at"].(string)
 	t.UpdatedAt, _ = m["updated_at"].(string)
 	return t
+}
+
+// IsSlugExist 檢查標誌是否已經存在
+func (t PermissionModel) IsSlugExist(slug string, id string) bool {
+	if id == "" {
+		check, _ := t.Table(t.TableName).Where("slug", "=", slug).First()
+		return check != nil
+	}
+	check, _ := t.Table(t.TableName).
+		Where("slug", "=", slug).
+		Where("id", "!=", id).
+		First()
+	return check != nil
 }

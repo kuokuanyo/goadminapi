@@ -438,6 +438,11 @@ func GetAssetUrl() string {
 	return globalCfg.AssetUrl
 }
 
+// globalCfg.AuthUserTable
+func GetAuthUserTable() string {
+	return globalCfg.AuthUserTable
+}
+
 func GetStore() Store {
 	return globalCfg.Store
 }

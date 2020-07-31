@@ -20,6 +20,16 @@ func (f Values) Delete(key string) {
 	delete(f, key)
 }
 
+// 判斷值是否為空
+func (f Values) IsEmpty(key ...string) bool {
+	for _, k := range key {
+		if f.Get(k) == "" {
+			return true
+		}
+	}
+	return false
+}
+
 // ToMap 將Values(struct)的值都加入map[string]string
 func (f Values) ToMap() map[string]string {
 	var m = make(map[string]string)

@@ -1,6 +1,7 @@
 package table
 
 import (
+	"fmt"
 	"goadminapi/modules/db/dialect"
 	"goadminapi/modules/logger"
 	"goadminapi/plugins/admin/modules"
@@ -93,6 +94,9 @@ func (tb *DefaultTable) InsertData(dataList form.Values) error {
 				}()
 
 				err := tb.Form.PostHook(dataList)
+				fmt.Println("****************")
+				fmt.Println(dataList)
+				fmt.Println(err)
 				if err != nil {
 					logger.Error(err)
 				}

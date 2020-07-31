@@ -42,9 +42,10 @@ func (admin *Admin) InitPlugin(services service.List) {
 	st := table.NewSystemTable(admin.Conn, c)
 
 	// Combine透過參數判斷GeneratorList已經有該key、value，如果不存在則加入該鍵與值
+	// **************用於要判斷:__prefix需要取得map[string]Generator*********************
 	admin.tableList.Combine(table.GeneratorList{
-		"manager":        st.GetManagerTable,
-		// "permission":     st.GetPermissionTable,
+		"manager":    st.GetManagerTable,
+		"permission": st.GetPermissionTable,
 		// "roles":          st.GetRolesTable,
 		// "op":             st.GetOpTable,
 		// "menu":           st.GetMenuTable,

@@ -10,7 +10,6 @@ import (
 )
 
 func (h *Handler) NewForm(ctx *context.Context) {
-	fmt.Println("---------------------")
 	param := guard.GetNewFormParam(ctx)
 
 	// 如果有上傳頭像檔案才會執行，否則為空map[]

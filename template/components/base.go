@@ -96,3 +96,21 @@ func (b Base) Alert() types.AlertAttribute {
 	}
 }
 
+func (b Base) Image() types.ImgAttribute {
+	return &ImgAttribute{
+		Name:      "image",
+		Width:     "50",
+		Height:    "50",
+		Src:       "",
+		Attribute: b.Attribute,
+	}
+}
+
+func (b Base) Label() types.LabelAttribute {
+	return &LabelAttribute{
+		Name:      "label",
+		Type:      "",
+		Content:   "",
+		Attribute: b.Attribute,
+	}
+}
