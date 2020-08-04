@@ -5,7 +5,6 @@ import (
 	"goadminapi/context"
 	"goadminapi/modules/config"
 	"goadminapi/modules/db"
-	"goadminapi/modules/logger"
 	"goadminapi/plugins/admin/models"
 	"goadminapi/template"
 	"goadminapi/template/types"
@@ -17,7 +16,7 @@ import (
 func SetPageContent(ctx *context.Context, user models.UserModel, c func(ctx interface{}) (types.Panel, error), conn db.Connection) {
 	panel, err := c(ctx)
 	if err != nil {
-		logger.Error("SetPageContent", err)
+		panic(err)
 		panel = template.WarningPanel(err.Error())
 	}
 

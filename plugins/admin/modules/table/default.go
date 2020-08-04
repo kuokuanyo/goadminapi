@@ -1,9 +1,7 @@
 package table
 
 import (
-	"fmt"
 	"goadminapi/modules/db/dialect"
-	"goadminapi/modules/logger"
 	"goadminapi/plugins/admin/modules"
 	"goadminapi/plugins/admin/modules/form"
 	"goadminapi/plugins/admin/modules/parameter"
@@ -49,7 +47,7 @@ func NewDefaultTable(cfgs ...Config) Table {
 	return &DefaultTable{
 		BaseTable: &BaseTable{
 			Info:           types.NewInfoPanel(cfg.PrimaryKey.Name), // 預設InfoPanel(struct)
-			Form:           types.NewFormPanel(), // 預設FormPanel(struct)
+			Form:           types.NewFormPanel(),                    // 預設FormPanel(struct)
 			Detail:         types.NewInfoPanel(cfg.PrimaryKey.Name),
 			CanAdd:         cfg.CanAdd,
 			Editable:       cfg.Editable,
@@ -77,9 +75,6 @@ func (tb *DefaultTable) InsertData(dataList form.Values) error {
 		errMsg = ""
 	)
 
-	// 將__post_type:1 加入至map[string][]string
-	dataList.Add("__post_type", "1")
-
 	// -------------只有新增權限會執行----------------
 	if tb.Form.PostHook != nil {
 		defer func() {
@@ -89,20 +84,20 @@ func (tb *DefaultTable) InsertData(dataList form.Values) error {
 			go func() {
 				defer func() {
 					if err := recover(); err != nil {
-						logger.Error(err)
+						panic(err)
 					}
 				}()
-
 				err := tb.Form.PostHook(dataList)
-				fmt.Println("****************")
-				fmt.Println(dataList)
-				fmt.Println(err)
 				if err != nil {
-					logger.Error(err)
+					if err.Error() == "no affect row" {
+						err = nil
+					}
+					panic(err)
 				}
 			}()
 		}()
 	}
+
 	// -------------只有新增權限會執行----------------
 	if tb.Form.Validator != nil {
 		if err := tb.Form.Validator(dataList); err != nil {
@@ -117,7 +112,7 @@ func (tb *DefaultTable) InsertData(dataList form.Values) error {
 	// 用戶及角色頁面會執行新增資料的動作，直接return結果
 	// --------------新增權限頁面不會執行------------------
 	if tb.Form.InsertFn != nil {
-		dataList.Delete("_post_type")
+		dataList.Delete("__post_type")
 		err = tb.Form.InsertFn(dataList)
 		if err != nil {
 			errMsg = "post error: " + err.Error()

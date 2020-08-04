@@ -99,7 +99,6 @@ func (db *Mysql) BeginTxAndConnection(conn string) *sql.Tx {
 
 // -------------connection(interface)的所有方法--------------------------
 
-
 // 與CommonQuery一樣(差別在tx執行)
 func CommonQueryWithTx(tx *sql.Tx, query string, args ...interface{}) ([]map[string]interface{}, error) {
 
@@ -223,7 +222,6 @@ func CommonQuery(db *sql.DB, query string, args ...interface{}) ([]map[string]in
 
 // CommonExec 執行sql命令
 func CommonExec(db *sql.DB, query string, args ...interface{}) (sql.Result, error) {
-
 	rs, err := db.Exec(query, args...)
 	if err != nil {
 		return nil, err

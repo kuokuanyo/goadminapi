@@ -3,6 +3,7 @@ package template
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"goadminapi/plugins/admin/models"
 	"goadminapi/template/login"
 	"goadminapi/template/types"
@@ -13,7 +14,6 @@ import (
 	"sync"
 
 	c "goadminapi/modules/config"
-	"goadminapi/modules/logger"
 	"goadminapi/modules/menu"
 )
 
@@ -217,7 +217,8 @@ func Execute(param ExecuteParam) *bytes.Buffer {
 			TmplFootJS:   Default().GetFootJS(),
 		}))
 	if err != nil {
-		logger.Error("template execute error", err)
+		fmt.Println("template execute error")
+		panic(err)
 	}
 	return buf
 }

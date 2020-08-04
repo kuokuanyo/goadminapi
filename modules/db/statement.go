@@ -178,9 +178,7 @@ func (sql *SQL) Update(values dialect.H) (int64, error) {
 	defer RecycleSQL(sql)
 
 	sql.Values = values
-
 	sql.dialect.Update(&sql.SQLComponent)
-
 	var (
 		res dbsql.Result
 		err error
@@ -191,11 +189,9 @@ func (sql *SQL) Update(values dialect.H) (int64, error) {
 	} else {
 		res, err = sql.diver.ExecWithConnection(sql.conn, sql.Statement, sql.Args...)
 	}
-
 	if err != nil {
 		return 0, err
 	}
-
 	if affectRow, _ := res.RowsAffected(); affectRow < 1 {
 		return 0, errors.New("no affect row")
 	}
@@ -344,7 +340,6 @@ func (sql *SQL) WithTx(tx *dbsql.Tx) *SQL {
 	sql.tx = tx
 	return sql
 }
-
 
 // WithTransaction 取得tx(struct)，會持續並行Rollback、commit
 func (sql *SQL) WithTransaction(fn TxFn) (res map[string]interface{}, err error) {

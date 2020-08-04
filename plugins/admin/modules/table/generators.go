@@ -375,6 +375,147 @@ func (s *SystemTable) GetManagerTable(ctx *context.Context) (managerTable Table)
 	return
 }
 
+// GetRolesTable 新增角色頁面、表單欄位資訊與函式
+func (s *SystemTable) GetRolesTable(ctx *context.Context) (roleTable Table) {
+	// NewDefaultTable 將參數值設置至預設DefaultTable(struct)
+	// *******roleTable為DefaultTable(struct)，包含table(interface)所有方法***********
+	roleTable = NewDefaultTable(DefaultConfigWithDriver(config.GetDatabases().GetDefault().Driver))
+
+	// GetInfo 將參數值設置至base.Info(InfoPanel(struct)).primaryKey
+	info := roleTable.GetInfo().AddXssJsFilter().HideFilterArea()
+
+	// 增加角色頁面欄位資訊與函式
+	// *********用戶角色、標誌可以篩選*************
+	info.AddField("ID", "id", db.Int).FieldSortable()
+	info.AddField("角色", "name", db.Varchar).FieldFilterable()
+	info.AddField("標誌", "slug", db.Varchar).FieldFilterable()
+	info.AddField("建立時間", "created_at", db.Timestamp)
+	info.AddField("更新時間", "updated_at", db.Timestamp)
+
+	// 刪除也必須刪除其他關連表資料
+	info.SetTable("roles").SetTitle("角色").SetDescription("角色管理").
+		SetDeleteFn(func(idArr []string) error {
+			var ids = interfaces(idArr)
+			_, txErr := s.connection().WithTransaction(func(tx *sql.Tx) (e error, i map[string]interface{}) {
+				deleteRoleUserErr := s.connection().WithTx(tx).
+					Table("role_users").
+					WhereIn("role_id", ids).
+					Delete()
+				if db.CheckError(deleteRoleUserErr, db.DELETE) {
+					return deleteRoleUserErr, nil
+				}
+
+				deleteRoleMenuErr := s.connection().WithTx(tx).
+					Table("role_menu").
+					WhereIn("role_id", ids).
+					Delete()
+				if db.CheckError(deleteRoleMenuErr, db.DELETE) {
+					return deleteRoleMenuErr, nil
+				}
+
+				deleteRolePermissionErr := s.connection().WithTx(tx).
+					Table("role_permissions").
+					WhereIn("role_id", ids).
+					Delete()
+				if db.CheckError(deleteRolePermissionErr, db.DELETE) {
+					return deleteRolePermissionErr, nil
+				}
+
+				deleteRolesErr := s.connection().WithTx(tx).
+					Table("roles").
+					WhereIn("id", ids).
+					Delete()
+				if db.CheckError(deleteRolesErr, db.DELETE) {
+					return deleteRolesErr, nil
+				}
+				return nil, nil
+			})
+			return txErr
+		})
+
+	// 處理表單欄位資訊與函式(更新、新增)
+	formList := roleTable.GetForm().AddXssJsFilter()
+	formList.AddField("ID", "id", db.Int, form.Default).FieldNotAllowEdit().FieldNotAllowAdd()
+	formList.AddField("角色", "name", db.Varchar, form.Text).FieldMust()
+	formList.AddField("標誌", "slug", db.Varchar, form.Text).FieldHelpMsg(template.HTML("不能重複")).FieldMust()
+	formList.AddField("權限", "permission_id", db.Varchar, form.SelectBox).
+		// 從permissions取得選項
+		FieldOptionsFromTable("permissions", "name", "id").
+		FieldDisplay(func(model types.FieldModel) interface{} {
+			var permissions = make([]string, 0)
+			if model.ID == "" {
+				return permissions
+			}
+
+			perModel, _ := s.table("role_permissions").
+				Select("permission_id").
+				Where("role_id", "=", model.ID).
+				All()
+			for _, v := range perModel {
+				permissions = append(permissions, strconv.FormatInt(v["permission_id"].(int64), 10))
+			}
+			return permissions
+		}).FieldHelpMsg(template.HTML("沒有對應的選項?") +
+		link("/admin/info/permission/new", "立刻新增一個"))
+	formList.AddField("建立時間", "updated_at", db.Timestamp, form.Default).FieldNotAllowAdd()
+	formList.AddField("更新時間", "created_at", db.Timestamp, form.Default).FieldNotAllowAdd()
+	formList.SetTable("roles").SetTitle("角色").SetDescription("角色管理")
+
+	// 設置更新函式，必須先刪除所有相關資料表的權限，再新增設置的權限
+	formList.SetUpdateFn(func(values form2.Values) error {
+		if models.Role().SetConn(s.conn).IsSlugExist(values.Get("slug"), values.Get("id")) {
+			return errors.New("slug exists")
+		}
+
+		role := models.RoleWithId(values.Get("id")).SetConn(s.conn)
+
+		_, txErr := s.connection().WithTransaction(func(tx *sql.Tx) (e error, i map[string]interface{}) {
+			_, updateRoleErr := role.WithTx(tx).Update(values.Get("name"), values.Get("slug"))
+			if db.CheckError(updateRoleErr, db.UPDATE) {
+				return updateRoleErr, nil
+			}
+
+			delPermissionErr := role.WithTx(tx).DeletePermissions()
+			if db.CheckError(delPermissionErr, db.DELETE) {
+				return delPermissionErr, nil
+			}
+			for i := 0; i < len(values["permission_id[]"]); i++ {
+				_, addPermissionErr := role.WithTx(tx).AddPermission(values["permission_id[]"][i])
+				if db.CheckError(addPermissionErr, db.INSERT) {
+					return addPermissionErr, nil
+				}
+			}
+			return nil, nil
+		})
+		return txErr
+	})
+
+	// 設置新增資料函式
+	formList.SetInsertFn(func(values form2.Values) error {
+		if models.Role().SetConn(s.conn).IsSlugExist(values.Get("slug"), "") {
+			return errors.New("slug exists")
+		}
+
+		_, txErr := s.connection().WithTransaction(func(tx *sql.Tx) (e error, i map[string]interface{}) {
+			role, createRoleErr := models.Role().WithTx(tx).SetConn(s.conn).New(values.Get("name"), values.Get("slug"))
+			if db.CheckError(createRoleErr, db.INSERT) {
+				return createRoleErr, nil
+			}
+
+			for i := 0; i < len(values["permission_id[]"]); i++ {
+				_, addPermissionErr := role.WithTx(tx).AddPermission(values["permission_id[]"][i])
+				if db.CheckError(addPermissionErr, db.INSERT) {
+					return addPermissionErr, nil
+				}
+			}
+			return nil, nil
+		})
+		return txErr
+	})
+	return
+}
+
+// GetPermissionTable 新增權限頁面、表單欄位欄位資訊與函式
 func (s *SystemTable) GetPermissionTable(ctx *context.Context) (permissionTable Table) {
 	// NewDefaultTable 將參數值設置至預設DefaultTable(struct)
 	// *******permissionTable為DefaultTable(struct)，包含table(interface)所有方法***********

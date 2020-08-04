@@ -46,9 +46,11 @@ func (admin *Admin) InitPlugin(services service.List) {
 	admin.tableList.Combine(table.GeneratorList{
 		"manager":    st.GetManagerTable,
 		"permission": st.GetPermissionTable,
-		// "roles":          st.GetRolesTable,
-		// "op":             st.GetOpTable,
+		"roles":      st.GetRolesTable,
 		// "menu":           st.GetMenuTable,
+
+		// ***************目前先不設置*******************
+		// "op":             st.GetOpTable,
 		// "normal_manager": st.GetNormalManagerTable,
 		// "site":           st.GetSiteTable,
 		// "generate":       st.GetGenerateForm,
