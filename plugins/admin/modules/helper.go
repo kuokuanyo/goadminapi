@@ -20,6 +20,14 @@ func SetDefault(source, def string) string {
 	return source
 }
 
+// 判斷第二個參數符號(分隔符)，如果為[則回傳[field(第一個參數)]，否則回傳ex: 'field'
+func FilterField(filed, delimiter string) string {
+	if delimiter == "[" {
+		return "[" + filed + "]"
+	}
+	return delimiter + filed + delimiter
+}
+
 // RemoveBlankFromArray 將參數中不為空的參數加入[]string
 func RemoveBlankFromArray(s []string) []string {
 	var r []string
@@ -29,6 +37,14 @@ func RemoveBlankFromArray(s []string) []string {
 		}
 	}
 	return r
+}
+
+// 判斷參數del後回傳del+s(參數)+del或[s(參數)]
+func Delimiter(del, s string) string {
+	if del == "[" {
+		return "[" + s + "]"
+	}
+	return del + s + del
 }
 
 // 判斷條件，true return a，false return b

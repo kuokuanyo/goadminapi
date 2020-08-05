@@ -2,6 +2,7 @@ package guard
 
 import (
 	"goadminapi/context"
+	"goadminapi/modules/config"
 	"goadminapi/plugins/admin/modules/form"
 	"goadminapi/plugins/admin/modules/parameter"
 	"goadminapi/plugins/admin/modules/table"
@@ -52,6 +53,10 @@ func (g *Guard) NewForm(ctx *context.Context) {
 
 	// 判斷參數是否是info url(true)
 	fromList := isInfoUrl(previous)
+	if fromList {
+		// GetRouteParamStr取得url.Values後加入__page(鍵)與值，最後編碼並回傳
+		previous = config.Url("/info/" + prefix + param.GetRouteParamStr())
+	}
 
 	// 取得在multipart/form-data所設定的參數(map[string][]string)
 	values := ctx.Request.MultipartForm.Value

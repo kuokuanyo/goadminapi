@@ -140,3 +140,35 @@ func (param Parameters) GetRouteParamStr() string {
 	p.Add("__page", param.Page)
 	return "?" + p.Encode()
 }
+
+// 將參數(多個string)結合並設置至Parameters.Fields["__pk"]後回傳
+func (param Parameters) WithPKs(id ...string) Parameters {
+	param.Fields["__pk"] = []string{strings.Join(id, ",")}
+	return param
+}
+
+func (param Parameters) Join() string {
+	p := param.GetFixedParamStr()
+	p.Add("__page", param.Page)
+	return p.Encode()
+}
+
+// 透過參數field尋找Parameters.Fields[field]是否存在，如果存在則回傳第一個value值(string)，不存在則回傳""
+func (param Parameters) GetFieldValue(field string) string {
+	value, ok := param.Fields[field]
+	if ok && len(value) > 0 {
+		return value[0]
+	}
+	return ""
+}
+
+// 透過參數__pk尋找Parameters.Fields[__pk]是否存在，如果存在則回傳第一個value值(string)並且用","拆解成[]string
+func (param Parameters) PKs() []string {
+	// 透過參數__pk尋找Parameters.Fields[__pk]是否存在，如果存在則回傳第一個value值(string)
+	// PrimaryKey = PrimaryKey
+	pk := param.GetFieldValue("__pk")
+	if pk == "" {
+		return []string{}
+	}
+	return strings.Split(param.GetFieldValue("__pk"), ",")
+}

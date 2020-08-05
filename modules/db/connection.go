@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"fmt"
 	"goadminapi/modules/config"
 	"goadminapi/modules/service"
 	"strings"
@@ -131,4 +132,20 @@ func GetConnection(srvs service.List) Connection {
 		return v
 	}
 	panic("wrong service")
+}
+
+// 取得資料庫引擎的Aggregation表達式，將參數值加入表達式
+func GetAggregationExpression(driver, field, headField, delimiter string) string {
+	switch driver {
+	// case "postgresql":
+	// 	return fmt.Sprintf("string_agg(%s::character varying, '%s') as %s", field, delimiter, headField)
+	case "mysql":
+		return fmt.Sprintf("group_concat(%s separator '%s') as %s", field, delimiter, headField)
+	// case "sqlite":
+	// 	return fmt.Sprintf("group_concat(%s, '%s') as %s", field, delimiter, headField)
+	// case "mssql":
+	// 	return fmt.Sprintf("string_agg(%s, '%s') as [%s]", field, delimiter, headField)
+	default:
+		panic("wrong driver")
+	}
 }

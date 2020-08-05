@@ -189,6 +189,13 @@ func (ctx *Context) SetStatusCode(code int) {
 	ctx.Response.StatusCode = code
 }
 
+// 添加重新導向的url(參數path)至header
+func (ctx *Context) Redirect(path string) {
+	ctx.Response.StatusCode = http.StatusFound
+	ctx.SetContentType("text/html; charset=utf-8")
+	ctx.AddHeader("Location", path)
+}
+
 // 判斷method是否為get以及header裡包含accept:html
 func (ctx *Context) WantHTML() bool {
 	return ctx.Method() == "GET" && strings.Contains(ctx.Headers("Accept"), "html")

@@ -5,6 +5,7 @@ import (
 	"goadminapi/modules/db"
 	"goadminapi/modules/service"
 	"goadminapi/plugins/admin/modules/form"
+	"goadminapi/plugins/admin/modules/parameter"
 	"sync"
 	"sync/atomic"
 
@@ -64,25 +65,25 @@ type Table interface {
 	GetForm() *types.FormPanel
 
 	// GetCanAdd() bool
-	// GetEditable() bool
-	// GetDeletable() bool
+	GetEditable() bool
+	GetDeletable() bool
 	// GetExportable() bool
 
 	GetPrimaryKey() PrimaryKey
 
-	// GetData(params parameter.Parameters) (PanelInfo, error)
-	// GetDataWithIds(params parameter.Parameters) (PanelInfo, error)
+	GetData(params parameter.Parameters) (PanelInfo, error)
+	GetDataWithIds(params parameter.Parameters) (PanelInfo, error)
 	// GetDataWithId(params parameter.Parameters) (FormInfo, error)
-	// UpdateData(dataList form.Values) error
+	UpdateData(dataList form.Values) error
 	InsertData(dataList form.Values) error
-	// DeleteData(pk string) error
+	DeleteData(pk string) error
 
 	// GetNewForm() FormInfo
 
 	// GetOnlyInfo() bool
-	// GetOnlyDetail() bool
-	// GetOnlyNewForm() bool
-	// GetOnlyUpdateForm() bool
+	GetOnlyDetail() bool
+	GetOnlyNewForm() bool
+	GetOnlyUpdateForm() bool
 
 	// Copy() Table
 }
@@ -144,3 +145,18 @@ func (base *BaseTable) GetForm() *types.FormPanel {
 func (base *BaseTable) GetDetail() *types.InfoPanel {
 	return base.Detail.SetPrimaryKey(base.PrimaryKey.Name, base.PrimaryKey.Type)
 }
+
+// 回傳BaseTable.Editable(是否可以編輯)
+func (base *BaseTable) GetEditable() bool { return base.Editable }
+
+// 回傳BaseTable.Deletable(是否可以刪除)
+func (base *BaseTable) GetDeletable() bool { return base.Deletable }
+
+// 回傳是否只有更新表單功能
+func (base *BaseTable) GetOnlyUpdateForm() bool { return base.OnlyUpdateForm }
+
+// 回傳是否只有新增表單功能
+func (base *BaseTable) GetOnlyNewForm() bool { return base.OnlyNewForm }
+
+// 回傳是否只有取得細節的權限
+func (base *BaseTable) GetOnlyDetail() bool { return base.OnlyDetail }

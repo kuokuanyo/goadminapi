@@ -5,6 +5,7 @@ import (
 	"errors"
 	"goadminapi/context"
 	"goadminapi/html"
+	"goadminapi/modules/collection"
 	"goadminapi/modules/config"
 	"goadminapi/modules/db"
 	"goadminapi/modules/db/dialect"
@@ -641,5 +642,147 @@ func (s *SystemTable) GetPermissionTable(ctx *context.Context) (permissionTable 
 		})
 		return err
 	})
+	return
+}
+
+// GetMenuTable 新增菜單頁面、表單欄位欄位資訊與函式
+func (s *SystemTable) GetMenuTable(ctx *context.Context) (menuTable Table) {
+	// NewDefaultTable 將參數值設置至預設DefaultTable(struct)
+	// *******permissionTable為DefaultTable(struct)，包含table(interface)所有方法***********
+	menuTable = NewDefaultTable(DefaultConfigWithDriver(config.GetDatabases().GetDefault().Driver))
+
+	// 增加菜單頁面欄位資訊與函式
+	info := menuTable.GetInfo().AddXssJsFilter().HideFilterArea()
+	info.AddField("ID", "id", db.Int).FieldSortable()
+	info.AddField("父級", "parent_id", db.Int)
+	info.AddField("menu名", "title", db.Varchar)
+	info.AddField("圖標", "icon", db.Varchar)
+	info.AddField("路徑", "uri", db.Varchar)
+	info.AddField("角色", "roles", db.Varchar)
+	info.AddField("標頭", "header", db.Varchar)
+	info.AddField("建立時間", "created_at", db.Timestamp)
+	info.AddField("更新時間", "updated_at", db.Timestamp)
+
+	// 設置刪除函式，與菜單有關聯的資料都必須刪除
+	info.SetTable("menu").SetTitle("菜單").SetDescription("菜單管理").
+		SetDeleteFn(func(idArr []string) error {
+			var ids = interfaces(idArr)
+			_, txErr := s.connection().WithTransaction(func(tx *sql.Tx) (e error, i map[string]interface{}) {
+				deleteRoleMenuErr := s.connection().WithTx(tx).
+					Table("role_menu").
+					WhereIn("menu_id", ids).
+					Delete()
+				if db.CheckError(deleteRoleMenuErr, db.DELETE) {
+					return deleteRoleMenuErr, nil
+				}
+
+				deleteMenusErr := s.connection().WithTx(tx).
+					Table("menu").
+					WhereIn("id", ids).
+					Delete()
+				if db.CheckError(deleteMenusErr, db.DELETE) {
+					return deleteMenusErr, nil
+				}
+
+				return nil, map[string]interface{}{}
+			})
+			return txErr
+		})
+
+	var parentIDOptions = types.FieldOptions{
+		{
+			Text:  "ROOT",
+			Value: "0",
+		},
+	}
+
+	// ***********處理父級選項******************
+	// 先取出所有的父級(父級的parent_id = 0)
+	allMenus, _ := s.connection().Table("menu").
+		Where("parent_id", "=", 0).
+		Select("id", "title").
+		OrderBy("order", "asc").
+		All()
+		// 所有父級的id
+	allMenuIDs := make([]interface{}, len(allMenus))
+
+	if len(allMenuIDs) > 0 {
+		for i := 0; i < len(allMenus); i++ {
+			allMenuIDs[i] = allMenus[i]["id"]
+		}
+		// 取得父級下的menu
+		secondLevelMenus, _ := s.connection().Table("menu").
+			WhereIn("parent_id", allMenuIDs).
+			Select("id", "title", "parent_id").
+			All()
+
+		// 轉換成[]map[string]interface{}
+		secondLevelMenusCol := collection.Collection(secondLevelMenus)
+
+		for i := 0; i < len(allMenus); i++ {
+			// 新增父級的選項名稱
+			parentIDOptions = append(parentIDOptions, types.FieldOption{
+				TextHTML: "&nbsp;&nbsp;┝  " + template.HTML(allMenus[i]["title"].(string)),
+				Value:    strconv.Itoa(int(allMenus[i]["id"].(int64))),
+			})
+
+			// 取得父級之下的menu
+			col := secondLevelMenusCol.Where("parent_id", "=", allMenus[i]["id"].(int64))
+			for i := 0; i < len(col); i++ {
+				parentIDOptions = append(parentIDOptions, types.FieldOption{
+					TextHTML: "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;┝  " +
+						template.HTML(col[i]["title"].(string)),
+					Value: strconv.Itoa(int(col[i]["id"].(int64))),
+				})
+			}
+		}
+	}
+	// ***********處理父級選項*********************
+
+	// 處理表單欄位資訊與函式(更新、新增)
+	formList := menuTable.GetForm().AddXssJsFilter()
+	formList.AddField("ID", "id", db.Int, form.Default).FieldNotAllowEdit().FieldNotAllowAdd()
+	formList.AddField("父級", "parent_id", db.Int, form.SelectSingle).
+	FieldOptions(parentIDOptions).
+	FieldDisplay(func(model types.FieldModel) interface{} {
+		var menuItem []string
+		if model.ID == "" {
+			return menuItem
+		}
+
+		menuModel, _ := s.table("menu").Select("parent_id").Find(model.ID)
+		menuItem = append(menuItem, strconv.FormatInt(menuModel["parent_id"].(int64), 10))
+		return menuItem
+	})
+	formList.AddField("menu名", "title", db.Varchar, form.Text).FieldMust()
+	formList.AddField("標頭", "header", db.Varchar, form.Text)
+	formList.AddField("圖標", "icon", db.Varchar, form.IconPicker)
+	formList.AddField("路徑", "uri", db.Varchar, form.Text)
+	// 角色選項
+	formList.AddField("角色", "roles", db.Int, form.Select).
+	FieldOptionsFromTable("roles", "slug", "id").
+	FieldDisplay(func(model types.FieldModel) interface{} {
+		var roles []string
+		if model.ID == "" {
+			return roles
+		}
+
+		roleModel, _ := s.table("role_menu").
+			Select("role_id").
+			Where("menu_id", "=", model.ID).
+			All()
+
+		for _, v := range roleModel {
+			roles = append(roles, strconv.FormatInt(v["role_id"].(int64), 10))
+		}
+		return roles
+	})
+	formList.AddField("更新時間", "updated_at", db.Timestamp, form.Default).FieldNotAllowAdd()
+	formList.AddField("建立時間", "created_at", db.Timestamp, form.Default).FieldNotAllowAdd()
+
+	formList.SetTable("menu").
+		SetTitle("菜單").
+		SetDescription("菜單管理")
+
 	return
 }

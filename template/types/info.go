@@ -20,6 +20,14 @@ const DefaultPageSize = 10
 
 type FieldList []Field
 
+// TableInfo 資料表資訊
+type TableInfo struct {
+	Table      string
+	PrimaryKey string
+	Delimiter  string
+	Driver     string
+}
+
 // Field 資料表資訊
 type Field struct {
 	Head     string
@@ -309,6 +317,72 @@ func (i *InfoPanel) FieldFilterable(filterType ...FilterType) *InfoPanel {
 	return i
 }
 
+// 透過參數並且將欄位、join語法...等資訊處理後，回傳[]TheadItem、欄位名稱、joinFields(ex:group_concat(goadmin_roles.`name`...)、join語法(left join....)、合併的資料表、可篩選過濾的欄位
+func (f FieldList) GetTheadAndFilterForm(info TableInfo, params parameter.Parameters, columns []string,
+	sql ...func() *db.SQL) (Thead, string, string, string, []string, []FormField) {
+	var (
+		thead      = make(Thead, 0)
+		fields     = ""                   // 欄位
+		joinFields = ""                   // ex: group_concat(roles.`name` separator 'CkN694kH') as roles_join_name,
+		joins      = ""                   // join資料表語法，ex: left join `role_users` on role_users.`user_id` = users.`id` left join....
+		joinTables = make([]string, 0)    // ex:{roles role_id id role_users}(用戶頁面)
+		filterForm = make([]FormField, 0) // 可以篩選過濾的欄位
+	)
+
+	// field為介面顯示的欄位
+	for _, field := range f {
+		// ------ID以及跟其他表關聯的欄位不會執行--------
+		if field.Field != info.PrimaryKey && modules.InArray(columns, field.Field) &&
+			// Valid對joins([]join(struct))執行迴圈，假設Join的Table、Field、JoinField都不為空，回傳true
+			!field.Joins.Valid() {
+			// ex: users.`username`,users.`name`,users.`created_at`,users.`updated_at`,
+			fields += info.Table + "." + modules.FilterField(field.Field, info.Delimiter) + ","
+		}
+
+		headField := field.Field
+
+		// -------------編輯介面(用戶的roles欄位(需要join其他表)會執行)-------------
+		// 處理join語法
+		// ex: [{role_users id user_id } {roles role_id id role_users}]
+		if field.Joins.Valid() {
+			// ex:roles_join_name
+			headField = field.Joins.Last().Table + "_join_" + field.Field
+
+			// GetAggregationExpression取得資料庫引擎的Aggregation表達式，將參數值加入表達式
+			// ex: group_concat(roles.`name` separator 'CkN694kH') as roles_join_name,
+			joinFields += db.GetAggregationExpression(info.Driver, field.Joins.Last().Table+"."+
+				modules.FilterField(field.Field, info.Delimiter), headField, JoinFieldValueDelimiter) + ","
+
+			for _, join := range field.Joins {
+				if !modules.InArray(joinTables, join.Table) {
+					joinTables = append(joinTables, join.Table)
+					if join.BaseTable == "" {
+						join.BaseTable = info.Table
+					}
+					// ex: joins =  left join `role_users` on role_users.`user_id` = users.`id` left join....
+					joins += " left join " + modules.FilterField(join.Table, info.Delimiter) + " on " +
+						join.Table + "." + modules.FilterField(join.JoinField, info.Delimiter) + " = " +
+						join.BaseTable + "." + modules.FilterField(join.Field, info.Delimiter)
+
+				}
+			}
+		}
+
+		// 可以篩選的欄位，例如用戶頁面的用戶名、暱稱、角色
+		if field.Filterable {
+			if len(sql) > 0 {
+				// GetFilterFormFields透過參數Parameters(struct)及string處理後回傳[]FormField
+				filterForm = append(filterForm, field.GetFilterFormFields(params, headField, sql[0]())...)
+			} else {
+				filterForm = append(filterForm, field.GetFilterFormFields(params, headField)...)
+			}
+		}
+
+	}
+
+	return thead, fields, joinFields, joins, joinTables, filterForm
+}
+
 // SetTable 設置資料表
 func (i *InfoPanel) SetTable(table string) *InfoPanel {
 	i.Table = table
@@ -365,6 +439,30 @@ func (i *InfoPanel) GetSort() string {
 	default:
 		return "desc"
 	}
+}
+
+// 假設Join的Table、Field、JoinField都不為空，回傳true
+func (j Join) Valid() bool {
+	return j.Table != "" && j.Field != "" && j.JoinField != ""
+}
+
+// 對joins([]join(struct))執行迴圈，假設Join的Table、Field、JoinField都不為空，回傳true
+func (j Joins) Valid() bool {
+	for i := 0; i < len(j); i++ {
+		// 假設Join的Table、Field、JoinField都不為空，回傳true
+		if j[i].Valid() {
+			return true
+		}
+	}
+	return false
+}
+
+// Last 判斷Joins([]Join)長度，如果大於0回傳Joins[len(j)-1](最後一個數值)
+func (j Joins) Last() Join {
+	if len(j) > 0 {
+		return j[len(j)-1]
+	}
+	return Join{}
 }
 
 // *****************FieldModelValue([]string)的方法*******************

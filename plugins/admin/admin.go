@@ -47,7 +47,7 @@ func (admin *Admin) InitPlugin(services service.List) {
 		"manager":    st.GetManagerTable,
 		"permission": st.GetPermissionTable,
 		"roles":      st.GetRolesTable,
-		// "menu":           st.GetMenuTable,
+		"menu":       st.GetMenuTable,
 
 		// ***************目前先不設置*******************
 		// "op":             st.GetOpTable,

@@ -5,6 +5,7 @@ import (
 	"goadminapi/modules/db"
 	"goadminapi/modules/service"
 	"goadminapi/plugins/admin/models"
+	"goadminapi/plugins/admin/modules"
 	"sync"
 
 	"golang.org/x/crypto/bcrypt"
@@ -110,4 +111,13 @@ func (s *TokenService) CheckToken(toCheckToken string) bool {
 		}
 	}
 	return false
+}
+
+// AddToken 建立uuid並設置至TokenService.tokens
+func (s *TokenService) AddToken() string {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	tokenStr := modules.Uuid()
+	s.tokens = append(s.tokens, tokenStr)
+	return tokenStr
 }

@@ -30,6 +30,10 @@ func (admin *Admin) initRouter() *Admin {
 	authPrefixRoute.GET("/info/:__prefix", admin.handler.ShowInfo).Name("info")
 	// *************還有前端函式還沒處理showNewForm、showTable********************
 	authPrefixRoute.POST("/new/:__prefix", admin.guardian.NewForm, admin.handler.NewForm).Name("new")
+	authPrefixRoute.POST("/delete/:__prefix", admin.guardian.Delete, admin.handler.Delete).Name("delete")
+	// *************還有前端函式還沒處理showForm、showNewForm、showTable********************
+	authPrefixRoute.POST("/edit/:__prefix", admin.guardian.EditForm, admin.handler.EditForm).Name("edit")
+
 
 	admin.App = app
 	return admin
