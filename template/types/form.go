@@ -378,3 +378,64 @@ func (f *FormPanel) FieldOptionExtJS(js template.JS) *FormPanel {
 	}
 	return f
 }
+
+// setOptionsFromSQL 從資料庫中設置選項
+func (f *FormField) setOptionsFromSQL(sql *db.SQL) {
+	if sql != nil && f.OptionTable.Table != "" && len(f.Options) == 0 {
+		// Select將參數設置至SQL(struct).Fields並且設置SQL(struct).Functions
+		sql.Table(f.OptionTable.Table).Select(f.OptionTable.ValueField, f.OptionTable.TextField)
+
+		if f.OptionTable.QueryProcessFn != nil {
+			f.OptionTable.QueryProcessFn(sql)
+		}
+
+		// 返回所有符合查詢的結果
+		queryRes, err := sql.All()
+		if err == nil {
+			for _, item := range queryRes {
+				f.Options = append(f.Options, FieldOption{
+					Value: fmt.Sprintf("%v", item[f.OptionTable.ValueField]),
+					Text:  fmt.Sprintf("%v", item[f.OptionTable.TextField]),
+				})
+			}
+		}
+
+		if f.OptionTable.ProcessFn != nil {
+			f.Options = f.OptionTable.ProcessFn(f.Options)
+		}
+	}
+}
+
+// SetSelected 判斷條件後將參數加入FieldOptions[k].SelectedLabel
+func (fo FieldOptions) SetSelected(val interface{}, labels []template.HTML) FieldOptions {
+
+	if valArr, ok := val.([]string); ok {
+		for k := range fo {
+			text := fo[k].Text
+			if text == "" {
+				text = string(fo[k].TextHTML)
+			}
+			fo[k].Selected = utils.InArray(valArr, fo[k].Value) || utils.InArray(valArr, text)
+			if fo[k].Selected {
+				fo[k].SelectedLabel = labels[0]
+			} else {
+				fo[k].SelectedLabel = labels[1]
+			}
+		}
+	} else {
+		for k := range fo {
+			text := fo[k].Text
+			if text == "" {
+				text = string(fo[k].TextHTML)
+			}
+			fo[k].Selected = fo[k].Value == val || text == val
+			if fo[k].Selected {
+				fo[k].SelectedLabel = labels[0]
+			} else {
+				fo[k].SelectedLabel = labels[1]
+			}
+		}
+	}
+
+	return fo
+}

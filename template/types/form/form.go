@@ -144,13 +144,13 @@ func (t Type) GetDefaultOptions(field string) (map[string]interface{}, map[strin
 
 // 判斷t(unit8)是否符合條件
 func (t Type) IsSelect() bool {
-	// Select = 3
-	// SelectSingle = 2
-	// SelectBox = 5
-	// Radio = 12
-	// Switch = 2
 	return t == Select || t == SelectSingle || t == SelectBox || t == Radio || t == Switch ||
 		t == Checkbox || t == CheckboxStacked || t == CheckboxSingle
+}
+
+// 判斷t(unit8)是否符合條件
+func (t Type) IsSingleSelect() bool {
+	return t == SelectSingle || t == Radio || t == Switch || t == CheckboxSingle
 }
 
 // 判斷t(unit8)是否符合條件，是否有多個選擇
@@ -200,4 +200,20 @@ func (t Type) FixOptions(m map[string]interface{}) map[string]interface{} {
 
 func (t Type) IsMultiFile() bool {
 	return t == Multifile
+}
+
+// 是否設置值為範圍
+func (t Type) IsRange() bool {
+	return t == DatetimeRange || t == NumberRange
+}
+
+// 判斷條件後設置[]template.HTML
+func (t Type) SelectedLabel() []template.HTML {
+	if t == Select || t == SelectSingle || t == SelectBox {
+		return []template.HTML{"selected", ""}
+	}
+	if t == Radio || t == Switch || t == Checkbox || t == CheckboxStacked || t == CheckboxSingle {
+		return []template.HTML{"checked", ""}
+	}
+	return []template.HTML{"", ""}
 }

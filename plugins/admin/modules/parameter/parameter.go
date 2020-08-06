@@ -9,13 +9,25 @@ import (
 
 var keys = []string{"__page", "__pageSize", "__sort", "__columns", "__prefix", "_pjax", "__no_animation_"}
 
+var operators = map[string]string{
+	"like": "like",
+	"gr":   ">",
+	"gq":   ">=",
+	"eq":   "=",
+	"ne":   "!=",
+	"le":   "<",
+	"lq":   "<=",
+	"free": "free",
+}
+
+
 type Parameters struct {
 	Page        string
 	PageInt     int
 	PageSize    string
 	PageSizeInt int
 	SortField   string
-	Columns     []string
+	Columns     []string // 為顯示的欄位
 	SortType    string
 	Animation   bool
 	URLPath     string
@@ -56,8 +68,8 @@ func GetParam(u *url.URL, defaultPageSize int, p ...string) Parameters {
 	pageInt, _ := strconv.Atoi(page)
 	pageSizeInt, _ := strconv.Atoi(pageSize)
 
-	sortField := getDefault(values, "__sort", primaryKey)                       // __sort
-	sortType := getDefault(values, "__sort_type", defaultSortType)              // __sort_type
+	sortField := getDefault(values, "__sort", primaryKey)          // __sort
+	sortType := getDefault(values, "__sort_type", defaultSortType) // __sort_type
 
 	// 如果有設定顯示欄位(則回傳欄位名稱至columnsArr，如果沒有設定則回傳空[])
 	columns := getDefault(values, "__columns", "") // ex: id,username,name...
@@ -133,6 +145,92 @@ func (param Parameters) GetFixedParamStr() url.Values {
 	return p
 }
 
+// 取得wheres語法、where數值、existKeys([]string)
+func (param Parameters) Statement(wheres, table, delimiter string, whereArgs []interface{}, columns, existKeys []string,
+	filterProcess func(string, string, string) string) (string, []interface{}, []string) {
+	var multiKey = make(map[string]uint8)
+
+	// 處理param.Fields，ex: map[__is_all:[false]]
+	for key, value := range param.Fields {
+		keyIndexSuffix := ""
+		
+		keyArr := strings.Split(key, "__index__")
+		// -----一般下面兩個條件式不會執行---------
+		if len(keyArr) > 1 {
+			key = keyArr[0]
+			keyIndexSuffix = "__index__" + keyArr[1]
+		}
+		if keyIndexSuffix != "" {
+			multiKey[key] = 0
+		} else if _, exist := multiKey[key]; !exist && modules.InArray(existKeys, key) {
+			continue
+		}
+
+		// 取的運算式符號
+		var op string
+		if strings.Contains(key, "_end") {
+			key = strings.Replace(key, "_end", "", -1)
+			op = "<="
+		} else if strings.Contains(key, "_start") {
+			key = strings.Replace(key, "_start", "", -1)
+			op = ">="
+		} else if len(value) > 1 {
+			op = "in"
+		} else if !strings.Contains(key, "__operator__") {
+			// -------一般執行此條件-----
+			op = operators[param.GetFieldOperator(key, keyIndexSuffix)] // op = '='(用戶頁面)
+		}
+
+		// --------一般__is_all都不在columns，因此執行else --------------
+		if modules.InArray(columns, key) {
+			if op == "in" {
+				qmark := ""
+				for range value {
+					qmark += "?,"
+				}
+				wheres += table + "." + modules.FilterField(key, delimiter) + " " + op + " (" + qmark[:len(qmark)-1] + ") and "
+			} else {
+				wheres += table + "." + modules.FilterField(key, delimiter) + " " + op + " ? and "
+			}
+			if op == "like" && !strings.Contains(value[0], "%") {
+				whereArgs = append(whereArgs, "%"+filterProcess(key, value[0], keyIndexSuffix)+"%")
+			} else {
+				for _, v := range value {
+					whereArgs = append(whereArgs, filterProcess(key, v, keyIndexSuffix))
+				}
+			}
+		} else {
+			keys := strings.Split(key, "_join_") // ex: [__is_all]
+
+			// -----一般下面條件式不會執行，len(keys)=0---------
+			if len(keys) > 1 {
+				val := filterProcess(key, value[0], keyIndexSuffix)
+				if op == "in" {
+					qmark := ""
+					for range value {
+						qmark += "?,"
+					}
+					wheres += keys[0] + "." + modules.FilterField(keys[1], delimiter) + " " + op + " (" + qmark[:len(qmark)-1] + ") and "
+				} else {
+					wheres += keys[0] + "." + modules.FilterField(keys[1], delimiter) + " " + op + " ? and "
+				}
+				if op == "like" && !strings.Contains(val, "%") {
+					whereArgs = append(whereArgs, "%"+val+"%")
+				} else {
+					for _, v := range value {
+						whereArgs = append(whereArgs, filterProcess(key, v, keyIndexSuffix))
+					}
+				}
+			}
+		}
+		existKeys = append(existKeys, key)
+	}
+	if len(wheres) > 3 {
+		wheres = wheres[:len(wheres)-4]
+	}
+
+	return wheres, whereArgs, existKeys
+}
 
 // 處理url後(?...)的部分(頁面設置、排序方式....等)
 func (param Parameters) GetRouteParamStr() string {
@@ -153,13 +251,18 @@ func (param Parameters) Join() string {
 	return p.Encode()
 }
 
-// 透過參數field尋找Parameters.Fields[field]是否存在，如果存在則回傳第一個value值(string)，不存在則回傳""
+// 取得欄位設置數值
 func (param Parameters) GetFieldValue(field string) string {
 	value, ok := param.Fields[field]
 	if ok && len(value) > 0 {
 		return value[0]
 	}
 	return ""
+}
+
+// 取得欄位設置數值(多個值([]string))
+func (param Parameters) GetFieldValues(field string) []string {
+	return param.Fields[field]
 }
 
 // 透過參數__pk尋找Parameters.Fields[__pk]是否存在，如果存在則回傳第一個value值(string)並且用","拆解成[]string
@@ -171,4 +274,28 @@ func (param Parameters) PKs() []string {
 		return []string{}
 	}
 	return strings.Split(param.GetFieldValue("__pk"), ",")
+}
+
+// 如果過濾值為範圍，設值起始值
+func (param Parameters) GetFilterFieldValueStart(field string) string {
+	return param.GetFieldValue(field + "_start")
+}
+
+// 如果過濾值為範圍，設值結束值
+func (param Parameters) GetFilterFieldValueEnd(field string) string {
+	return param.GetFieldValue(field + "_end")
+}
+
+// 將[]string利用"__separator__"字串join
+func (param Parameters) GetFieldValuesStr(field string) string {
+	return strings.Join(param.Fields[field], "__separator__")
+}
+
+// GetFieldOperator 取得運算子(ex: =.<.>...)
+func (param Parameters) GetFieldOperator(field, suffix string) string {
+	op := param.GetFieldValue(field + "__operator__" + suffix)
+	if op == "" {
+		return "eq"
+	}
+	return op
 }

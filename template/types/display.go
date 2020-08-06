@@ -1,8 +1,10 @@
 package types
 
 import (
+	"fmt"
 	"goadminapi/modules/config"
 	"goadminapi/template/types/form"
+	"html/template"
 	"strings"
 )
 
@@ -73,4 +75,38 @@ func setDefaultDisplayFnOfFormType(f *FormPanel, typ form.Type) {
 			return strings.Split(value.Value, ",")
 		}
 	}
+}
+
+// IsNotSelectRes判斷參數類別，如果為HTML、[]string、[][]string則回傳false
+func (f FieldDisplay) IsNotSelectRes(v interface{}) bool {
+	switch v.(type) {
+	case template.HTML:
+		return false
+	case []string:
+		return false
+	case [][]string:
+		return false
+	default:
+		return true
+	}
+}
+
+// 判斷條件後回傳數值(interface{})
+func (f FieldDisplay) ToDisplay(value FieldModel) interface{} {
+	// FieldDisplay.Display(func(value FieldModel) interface{})
+	val := f.Display(value)
+	// IsNotSelectRes判斷參數類別，如果為HTML、[]string、[][]string則回傳false
+	if len(f.DisplayProcessChains) > 0 && f.IsNotSelectRes(val) {
+		valStr := fmt.Sprintf("%v", val)
+		for _, process := range f.DisplayProcessChains {
+			valStr = fmt.Sprintf("%v", process(FieldModel{
+				Row:   value.Row,
+				Value: valStr,
+				ID:    value.ID,
+			}))
+		}
+		return valStr
+	}
+
+	return val
 }

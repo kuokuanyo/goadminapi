@@ -2,10 +2,12 @@ package table
 
 import (
 	"encoding/json"
+	"fmt"
 	"goadminapi/modules/db/dialect"
 	"goadminapi/plugins/admin/modules"
 	"goadminapi/plugins/admin/modules/form"
 	"goadminapi/plugins/admin/modules/parameter"
+	"html/template"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -484,10 +486,10 @@ func (tb *DefaultTable) delimiter() string {
 	return ""
 }
 
-// 透過參數並且將欄位、join語法...等資訊處理後，回傳[]TheadItem、欄位名稱、joinFields(ex:group_concat(roles.`name`...)、合併的資料表、可篩選過濾的欄位
+// 取得[]TheadItem(欄位資訊)、欄位名稱、joinFields(ex:group_concat(goadmin_roles.`name`...)、join語法(left join....)、合併的資料表、可篩選過濾的欄位
 func (tb *DefaultTable) getTheadAndFilterForm(params parameter.Parameters, columns Columns) (types.Thead,
 	string, string, string, []string, []types.FormField) {
-		// TableInfo(struct) 資料表資訊
+	// TableInfo(struct) 資料表資訊
 	return tb.Info.FieldList.GetTheadAndFilterForm(types.TableInfo{
 		Table:      tb.Info.Table,       // ex: users
 		Delimiter:  tb.delimiter(),      // ex:'
@@ -496,6 +498,95 @@ func (tb *DefaultTable) getTheadAndFilterForm(params parameter.Parameters, colum
 	}, params, columns, func() *db.SQL {
 		return tb.sql()
 	})
+}
+
+// getTempModelData 取得顯示在頁面上的資料(只取得選擇要顯示的欄位)
+// 不管有沒有選擇要顯示ID欄位，都會將ID數值加入map[string]types.InfoItem
+func (tb *DefaultTable) getTempModelData(res map[string]interface{}, params parameter.Parameters, columns Columns) map[string]types.InfoItem {
+	var tempModelData = make(map[string]types.InfoItem)
+	headField := ""
+
+	// GetValueFromDatabaseType 取得id(主鍵)的值
+	primaryKeyValue := db.GetValueFromDatabaseType(tb.PrimaryKey.Type, res[tb.PrimaryKey.Name], len(columns) == 0)
+
+	// DefaultTable.Info.FieldList為介面所有欄位資訊
+	for _, field := range tb.Info.FieldList {
+		headField = field.Field // 欄位名稱
+
+		// 用戶介面的角色欄位會執行(因為需要join其他表)
+		if field.Joins.Valid() {
+			// ex: roles_join_name
+			headField = field.Joins.Last().Table + "_join_" + field.Field
+		}
+
+		if field.Hide {
+			continue
+		}
+		// params.Columns為頁面中所選擇顯示的欄位
+		// 如果沒有選擇要顯示該欄位則直接continue
+		if !modules.InArrayWithoutEmpty(params.Columns, headField) {
+			continue
+		}
+
+		typeName := field.TypeName
+		// 將有join其他資料表的欄位(例如用戶頁面的角色欄位)類別設為VARCHAR
+		if field.Joins.Valid() {
+			typeName = db.Varchar
+		}
+
+		// GetValueFromDatabaseType 判斷條件後取得Value(string)
+		combineValue := db.GetValueFromDatabaseType(typeName, res[headField], len(columns) == 0).String()
+
+		var value interface{}
+		// 取得欄位的值，角色欄位會取得ex: <span class="label label-succ.....HTML語法
+		if len(columns) == 0 || modules.InArray(columns, headField) || field.Joins.Valid() {
+			value = field.ToDisplay(types.FieldModel{
+				ID:    primaryKeyValue.String(),
+				Value: combineValue,
+				Row:   res,
+			})
+		} else {
+			value = field.ToDisplay(types.FieldModel{
+				ID:    primaryKeyValue.String(),
+				Value: "",
+				Row:   res,
+			})
+		}
+
+		if valueStr, ok := value.(string); ok {
+			tempModelData[headField] = types.InfoItem{
+				Content: template.HTML(valueStr),
+				Value:   combineValue,
+			}
+		} else {
+			// -----角色欄位執行------
+			tempModelData[headField] = types.InfoItem{
+				Content: value.(template.HTML),
+				Value:   combineValue,
+			}
+		}
+	}
+
+	// 不管有沒有顯示id(主鍵)欄位，最後都會加上id欄位資訊
+	primaryKeyField := tb.Info.FieldList.GetFieldByFieldName(tb.PrimaryKey.Name)
+	value := primaryKeyField.ToDisplay(types.FieldModel{
+		ID:    primaryKeyValue.String(),
+		Value: primaryKeyValue.String(),
+		Row:   res,
+	})
+
+	if valueStr, ok := value.(string); ok {
+		tempModelData[tb.PrimaryKey.Name] = types.InfoItem{
+			Content: template.HTML(valueStr),
+			Value:   primaryKeyValue.String(),
+		}
+	} else {
+		tempModelData[tb.PrimaryKey.Name] = types.InfoItem{
+			Content: value.(template.HTML),
+			Value:   primaryKeyValue.String(),
+		}
+	}
+	return tempModelData
 }
 
 // 透過參數處理sql語法後接著取得資料表資料，判斷條件處理最後將值設置至PanelInfo(struct)
@@ -540,8 +631,104 @@ func (tb *DefaultTable) getDataFromDatabase(params parameter.Parameters) (PanelI
 	// getColumns(取得資料表欄位)將欄位名稱加入columns([]string)
 	columns, _ := tb.getColumns(tb.Info.Table)
 
-	// 透過參數並且將欄位、join語法...等資訊處理後，回傳[]TheadItem、欄位名稱、joinFields(ex:group_concat(goadmin_roles.`name`...)、join語法(left join....)、合併的資料表、可篩選過濾的欄位
+	// 取得[]TheadItem(欄位資訊)、欄位名稱、joinFields(ex:group_concat(goadmin_roles.`name`...)、join語法(left join....)、合併的資料表、可篩選過濾的欄位
 	thead, fields, joinFields, joins, joinTables, filterForm := tb.getTheadAndFilterForm(params, columns)
+
+	fields += pk
+	allFields := fields
+	groupFields := fields
+
+	if joinFields != "" {
+		allFields += "," + joinFields[:len(joinFields)-1]
+		// -------mssql引擎才會執行下面語法處理------------
+		if connection.Name() == "mssql" {
+			for _, field := range tb.Info.FieldList {
+				if field.TypeName == db.Text || field.TypeName == db.Longtext {
+					f := modules.Delimiter(connection.GetDelimiter(), field.Field)
+					headField := tb.Info.Table + "." + f
+					allFields = strings.Replace(allFields, headField, "CAST("+headField+" AS NVARCHAR(MAX)) as "+f, -1)
+					groupFields = strings.Replace(groupFields, headField, "CAST("+headField+" AS NVARCHAR(MAX))", -1)
+				}
+			}
+		}
+	}
+
+	// ------------一般不會執行，都有設置排序欄位------------------
+	if !modules.InArray(columns, params.SortField) {
+		params.SortField = tb.PrimaryKey.Name
+	}
+
+	var (
+		wheres    = ""
+		whereArgs = make([]interface{}, 0)
+		args      = make([]interface{}, 0)
+		existKeys = make([]string, 0)
+	)
+
+	// -------一般介面的ids為空[]-------------------
+	if len(ids) > 0 {
+		for _, value := range ids {
+			if value != "" {
+				wheres += "?,"
+				args = append(args, value)
+			}
+		}
+		wheres = wheres[:len(wheres)-1]
+	} else {
+		// Statement 取得wheres語法、where數值、existKeys([]string)
+		// --------一般取得空值，只有existKeys=[__is_all]----------------
+		wheres, whereArgs, existKeys = params.Statement(wheres, tb.Info.Table, connection.GetDelimiter(), whereArgs, columns, existKeys,
+			tb.Info.FieldList.GetFieldFilterProcessValue)
+
+		// Statement 處理wheres語法及where值後回傳
+		// ----一般DefaultTable.Info.Wheres為空，回傳的值不變-------
+		wheres, whereArgs = tb.Info.Wheres.Statement(wheres, connection.GetDelimiter(), whereArgs, existKeys, columns)
+
+		// ----一般DefaultTable.Info.WhereRaws為空，回傳的值不變-------
+		wheres, whereArgs = tb.Info.WhereRaws.Statement(wheres, whereArgs)
+
+		if wheres != "" {
+			wheres = " where " + wheres
+		}
+
+		if connection.Name() == "mssql" {
+			args = append(whereArgs, (params.PageInt-1)*params.PageSizeInt, params.PageInt*params.PageSizeInt)
+		} else {
+			args = append(whereArgs, params.PageSizeInt, (params.PageInt-1)*params.PageSizeInt)
+		}
+	}
+
+	groupBy := ""
+	if len(joinTables) > 0 {
+		if connection.Name() == "mssql" {
+			groupBy = " GROUP BY " + groupFields
+		} else {
+			groupBy = " GROUP BY " + pk
+		}
+	}
+
+	queryCmd := ""
+	if connection.Name() == "mssql" && len(ids) == 0 {
+		queryCmd = fmt.Sprintf(queryStatement, tb.Info.Table, params.SortField, params.SortType,
+			allFields, tb.Info.Table, joins, wheres, groupBy)
+	} else {
+		queryCmd = fmt.Sprintf(queryStatement, allFields, tb.Info.Table, joins, wheres, groupBy,
+			tb.Info.Table, params.SortField, params.SortType)
+	}
+
+	res, err := connection.QueryWithConnection(tb.connection, queryCmd, args...)
+	if err != nil {
+		return PanelInfo{}, err
+	}
+
+	infoList := make([]map[string]types.InfoItem, 0)
+	// 將取得資料處理
+	for i := 0; i < len(res); i++ {
+		// getTempModelData 取得顯示在頁面上的資料(只取得選擇要顯示的欄位)
+		// 不管有沒有選擇要顯示ID欄位，都會將數值加入map[string]types.InfoItem
+		infoList = append(infoList, tb.getTempModelData(res[i], params, columns))
+	}
+
 }
 
 // getDataFromURL(從url中取得data)

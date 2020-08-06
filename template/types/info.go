@@ -8,6 +8,8 @@ import (
 	"goadminapi/template/types/form"
 	"goadminapi/template/types/table"
 	"html/template"
+	"strconv"
+	"strings"
 
 	"goadminapi/plugins/admin/modules"
 	"goadminapi/plugins/admin/modules/parameter"
@@ -317,7 +319,108 @@ func (i *InfoPanel) FieldFilterable(filterType ...FilterType) *InfoPanel {
 	return i
 }
 
-// 透過參數並且將欄位、join語法...等資訊處理後，回傳[]TheadItem、欄位名稱、joinFields(ex:group_concat(goadmin_roles.`name`...)、join語法(left join....)、合併的資料表、可篩選過濾的欄位
+// GetFilterFormFields 將Field(struct)處理後取得可篩選的欄位資訊
+func (f Field) GetFilterFormFields(params parameter.Parameters, headField string, sql ...*db.SQL) []FormField {
+	var (
+		filterForm               = make([]FormField, 0)
+		value, value2, keySuffix string
+	)
+
+	// 處理可以篩選條件的欄位
+	for index, filter := range f.FilterFormFields {
+		// 一般index = 0，不會執行
+		if index > 0 {
+			keySuffix = "__index__" + strconv.Itoa(index)
+		}
+
+		if filter.Type.IsRange() { // 是否設定篩選範圍
+			value = params.GetFilterFieldValueStart(headField)
+			value2 = params.GetFilterFieldValueEnd(headField)
+		} else if filter.Type.IsMultiSelect() { // 是否篩選多個條件
+			value = params.GetFieldValuesStr(headField)
+		} else {
+			if filter.Operator == FilterOperatorFree {
+				// GetFieldOperator 取得運算子(ex: =.<.>...)
+				value2 = GetOperatorFromValue(params.GetFieldOperator(headField, keySuffix)).String()
+			}
+			// 一般篩選欄位都執行GetFieldValue函式
+			// GetFieldValue 取得欄位設置數值
+			value = params.GetFieldValue(headField + keySuffix)
+		}
+
+		var (
+			optionExt1 = filter.OptionExt
+			optionExt2 template.JS
+		)
+		if filter.OptionExt == template.JS("") {
+			// ------------一般可篩選欄位只會執行GetDefaultOptions，結果都為空--------------
+			// GetDefaultOptions 設置表單欄位選項
+			op1, op2, js := filter.Type.GetDefaultOptions(headField + keySuffix)
+			if op1 != nil {
+				s, _ := json.Marshal(op1)
+				optionExt1 = template.JS(string(s))
+			}
+			if op2 != nil {
+				s, _ := json.Marshal(op2)
+				optionExt2 = template.JS(string(s))
+			}
+			if js != template.JS("") {
+				optionExt1 = js
+			}
+		}
+
+		field := &FormField{
+			Field:       headField + keySuffix,
+			FieldClass:  headField + keySuffix,
+			Head:        filter.Head,
+			TypeName:    f.TypeName,
+			HelpMsg:     filter.HelpMsg,
+			FormType:    filter.Type,
+			Editable:    true,
+			Width:       filter.Width,
+			Placeholder: filter.Placeholder,
+			Value:       template.HTML(value),
+			Value2:      value2,
+			Options:     filter.Options,
+			OptionExt:   optionExt1,
+			OptionExt2:  optionExt2,
+			OptionTable: filter.OptionTable,
+			Label:       filter.Operator.Label(),
+		}
+
+		// 判斷條件後，從資料庫取得資料設置選項
+		// ----------一般不會執行------------------
+		field.setOptionsFromSQL(sql[0])
+
+		// ----------一般下面兩個條件不會執行------------------
+		if filter.Type.IsSingleSelect() {
+			// SetSelected 判斷條件後將參數加入FieldOptions[k].SelectedLabel
+			field.Options = field.Options.SetSelected(params.GetFieldValue(f.Field), filter.Type.SelectedLabel())
+		}
+		if filter.Type.IsMultiSelect() {
+			field.Options = field.Options.SetSelected(params.GetFieldValues(f.Field), filter.Type.SelectedLabel())
+		}
+
+		filterForm = append(filterForm, *field)
+
+		// ----------一般下面條件不會執行------------------
+		if filter.Operator.AddOrNot() {
+			filterForm = append(filterForm, FormField{
+				Field:      headField + "__operator__" + keySuffix,
+				FieldClass: headField + "__operator__" + keySuffix,
+				Head:       f.Head,
+				TypeName:   f.TypeName,
+				Value:      template.HTML(filter.Operator.Value()),
+				FormType:   filter.Type,
+				Hide:       true,
+			})
+		}
+
+	}
+	return filterForm
+}
+
+// 取得[]TheadItem(欄位資訊)、欄位名稱、joinFields(ex:group_concat(goadmin_roles.`name`...)、join語法(left join....)、合併的資料表、可篩選過濾的欄位
 func (f FieldList) GetTheadAndFilterForm(info TableInfo, params parameter.Parameters, columns []string,
 	sql ...func() *db.SQL) (Thead, string, string, string, []string, []FormField) {
 	var (
@@ -368,19 +471,128 @@ func (f FieldList) GetTheadAndFilterForm(info TableInfo, params parameter.Parame
 			}
 		}
 
-		// 可以篩選的欄位，例如用戶頁面的用戶名、暱稱、角色
+		// 取得可篩選的欄位資訊，例如用戶頁面的用戶名、暱稱、角色
 		if field.Filterable {
 			if len(sql) > 0 {
-				// GetFilterFormFields透過參數Parameters(struct)及string處理後回傳[]FormField
+				// GetFilterFormFields 將Field(struct)處理後取得可篩選的欄位資訊
 				filterForm = append(filterForm, field.GetFilterFormFields(params, headField, sql[0]())...)
 			} else {
 				filterForm = append(filterForm, field.GetFilterFormFields(params, headField)...)
 			}
 		}
 
+		// 檢查欄位是否隱藏
+		if field.Hide {
+			continue
+		}
+
+		// 將值添加至[]TheadItem
+		thead = append(thead, TheadItem{
+			Head:     field.Head,
+			Sortable: field.Sortable, // 是否可以排序
+			Field:    headField,
+			// params.Columns為顯示的欄位
+			Hide:       !modules.InArrayWithoutEmpty(params.Columns, headField), // 是否隱藏欄位
+			Editable:   field.EditAble,
+			EditType:   field.EditType.String(),
+			EditOption: field.EditOptions,
+			Width:      strconv.Itoa(field.Width) + "px",
+		})
 	}
 
 	return thead, fields, joinFields, joins, joinTables, filterForm
+}
+
+// 透過參數取得欄位資訊
+func (f FieldList) GetFieldByFieldName(name string) Field {
+	for _, field := range f {
+		if field.Field == name {
+			return field
+		}
+		if JoinField(field.Joins.Last().Table, field.Field) == name {
+			return field
+		}
+	}
+	return Field{}
+}
+
+// 取得過濾欄位的處裡值
+func (f FieldList) GetFieldFilterProcessValue(key, value, keyIndex string) string {
+
+	field := f.GetFieldByFieldName(key)
+	index := 0
+	if keyIndex != "" {
+		index, _ = strconv.Atoi(keyIndex)
+	}
+	if field.FilterFormFields[index].ProcessFn != nil {
+		value = field.FilterFormFields[index].ProcessFn(value)
+	}
+	return value
+}
+
+// Statement 處理wheres語法及where值後回傳
+func (whs Wheres) Statement(wheres, delimiter string, whereArgs []interface{}, existKeys, columns []string) (string, []interface{}) {
+	pwheres := ""
+
+	for k, wh := range whs {
+		whFieldArr := strings.Split(wh.Field, ".")
+		whField := ""
+		whTable := ""
+
+		if len(whFieldArr) > 1 {
+			whField = whFieldArr[1]
+			whTable = whFieldArr[0]
+		} else {
+			whField = whFieldArr[0]
+		}
+
+		if modules.InArray(existKeys, whField) {
+			continue
+		}
+
+		// TODO: support like operation and join table
+		if modules.InArray(columns, whField) {
+
+			joinMark := ""
+			if k != len(whs)-1 {
+				joinMark = whs[k+1].Join
+			}
+
+			if whTable != "" {
+				pwheres += whTable + "." + modules.FilterField(whField, delimiter) + " " + wh.Operator + " ? " + joinMark + " "
+			} else {
+				pwheres += modules.FilterField(whField, delimiter) + " " + wh.Operator + " ? " + joinMark + " "
+			}
+			whereArgs = append(whereArgs, wh.Arg)
+		}
+	}
+	if wheres != "" && pwheres != "" {
+		wheres += " and "
+	}
+	return wheres + pwheres, whereArgs
+}
+
+// Statement 處理wheres語法及where值後回傳
+func (wh WhereRaw) Statement(wheres string, whereArgs []interface{}) (string, []interface{}) {
+
+	if wh.Raw == "" {
+		return wheres, whereArgs
+	}
+
+	if wheres != "" {
+		if wh.check() != 0 {
+			wheres += wh.Raw + " "
+		} else {
+			wheres += " and " + wh.Raw + " "
+		}
+
+		whereArgs = append(whereArgs, wh.Args...)
+	} else {
+		wheres += wh.Raw[wh.check():] + " "
+		whereArgs = append(whereArgs, wh.Args...)
+	}
+
+	return wheres, whereArgs
 }
 
 // SetTable 設置資料表
@@ -441,6 +653,11 @@ func (i *InfoPanel) GetSort() string {
 	}
 }
 
+// return table_join_field
+func JoinField(table, field string) string {
+	return table + "_join_" + field
+}
+
 // 假設Join的Table、Field、JoinField都不為空，回傳true
 func (j Join) Valid() bool {
 	return j.Table != "" && j.Field != "" && j.JoinField != ""
@@ -475,4 +692,34 @@ func (r FieldModelValue) First() string {
 // return FieldModelValue[0]
 func (r FieldModelValue) Value() string {
 	return r.First()
+}
+
+func (wh WhereRaw) check() int {
+	index := 0
+	for i := 0; i < len(wh.Raw); i++ {
+		if wh.Raw[i] == ' ' {
+			continue
+		} else {
+			if wh.Raw[i] == 'a' {
+				if len(wh.Raw) < i+3 {
+					break
+				} else {
+					if wh.Raw[i+1] == 'n' && wh.Raw[i+2] == 'd' {
+						index = i + 3
+					}
+				}
+			} else if wh.Raw[i] == 'o' {
+				if len(wh.Raw) < i+2 {
+					break
+				} else {
+					if wh.Raw[i+1] == 'r' {
+						index = i + 2
+					}
+				}
+			} else {
+				break
+			}
+		}
+	}
+	return index
 }
