@@ -218,6 +218,15 @@ func (t UserModel) AddPermission(permissionId string) (int64, error) {
 	return 0, nil
 }
 
+// 藉由參數檢查權限，如果有權限回傳第一個參數(path)，反之回傳""
+func (t UserModel) GetCheckPermissionByUrlMethod(path, method string) string {
+	// 檢查權限(藉由url、method)
+	if !t.CheckPermissionByUrlMethod(path, method, url.Values{}) {
+		return ""
+	}
+	return path
+}
+
 // Update update data
 func (t UserModel) Update(username, password, name, avatar string) (int64, error) {
 	fieldValues := dialect.H{

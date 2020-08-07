@@ -135,15 +135,15 @@ type Template interface {
 	// // form and table
 	// Form() types.FormAttribute
 	// Table() types.TableAttribute
-	// DataTable() types.DataTableAttribute
+	DataTable() types.DataTableAttribute
 
 	// TreeView() types.TreeViewAttribute
 	// Tree() types.TreeAttribute
-	// Tabs() types.TabsAttribute
+	Tabs() types.TabsAttribute
 	Alert() types.AlertAttribute
 	// Link() types.LinkAttribute
 
-	// Paginator() types.PaginatorAttribute
+	Paginator() types.PaginatorAttribute
 	// Popup() types.PopupAttribute
 	// Box() types.BoxAttribute
 
@@ -202,7 +202,7 @@ func GetComp(name string) Component {
 	panic("wrong component name")
 }
 
-// 將給定的數據(types.Page(struct))寫入buf(struct)並回傳
+// 將給定的數據寫入buf(struct)並回傳
 func Execute(param ExecuteParam) *bytes.Buffer {
 	buf := new(bytes.Buffer)
 	err := param.Tmpl.ExecuteTemplate(buf, param.TmplName,

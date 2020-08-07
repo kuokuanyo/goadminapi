@@ -12,6 +12,14 @@ func InArray(arr []string, str string) bool {
 	return false
 }
 
+// 判斷第一個(condition)參數，如果true則回傳第二個參數，否則回傳""
+func AorEmpty(condition bool, a string) string {
+	if condition {
+		return a
+	}
+	return ""
+}
+
 // 判斷arr([]string)長度如果為0回傳true，如果值與第二個參數(string)相等也回傳true，否則回傳false
 func InArrayWithoutEmpty(arr []string, str string) bool {
 	if len(arr) == 0 {

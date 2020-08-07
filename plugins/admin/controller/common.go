@@ -1,13 +1,17 @@
 package controller
 
 import (
+	"bytes"
 	"goadminapi/modules/auth"
 	c "goadminapi/modules/config"
+	"goadminapi/modules/menu"
+	"goadminapi/template/types"
 	"regexp"
 
 	"goadminapi/context"
 	"goadminapi/modules/db"
 	"goadminapi/modules/service"
+	"goadminapi/plugins/admin/models"
 	"goadminapi/plugins/admin/modules/table"
 	"sync"
 
@@ -22,7 +26,7 @@ type Handler struct {
 	routes        context.RouterMap
 	generators    table.GeneratorList // map[string]Generator
 	operations    []context.Node
-	//navButtons    *types.Buttons
+	navButtons    *types.Buttons
 	operationLock sync.Mutex
 }
 
@@ -49,6 +53,28 @@ func New(cfg ...Config) *Handler {
 		operations: make([]context.Node, 0),
 		// navButtons: new(types.Buttons),
 	}
+}
+
+// 將參數設置至ExecuteParam(struct)，接著將給定的數據寫入buf(struct)並回傳
+func (h *Handler) Execute(ctx *context.Context, user models.UserModel, panel types.Panel, animation ...bool) *bytes.Buffer {
+	tmpl, tmplName := aTemplate().GetTemplate(isPjax(ctx))
+
+	return template.Execute(template.ExecuteParam{
+		User:      user,
+		TmplName:  tmplName,
+		Tmpl:      tmpl,
+		Panel:     panel,
+		Config:    *h.config,
+		Menu:      menu.GetGlobalMenu(user, h.conn).SetActiveClass(h.config.URLRemovePrefix(ctx.Path())),
+		Animation: len(animation) > 0 && animation[0] || len(animation) == 0,
+		Buttons:   (*h.navButtons).CheckPermission(user),
+		Iframe:    ctx.Query("__iframe") == "true",
+	})
+}
+
+// 藉由參數取得Router(struct)
+func (h *Handler) route(name string) context.Router {
+	return h.routes.Get(name)
 }
 
 func isNewUrl(s string, p string) bool {
@@ -162,4 +188,21 @@ func (h *Handler) table(prefix string, ctx *context.Context) table.Table {
 // 將參數h.services.Get(auth.TokenServiceKey)轉換成TokenService(struct)類別後回傳
 func (h *Handler) authSrv() *auth.TokenService {
 	return auth.GetTokenService(h.services.Get("token_csrf_helper"))
+}
+
+// 判斷是否header X-PJAX:true
+func isPjax(ctx *context.Context) bool {
+	return ctx.IsPjax()
+}
+
+func aAlert() types.AlertAttribute {
+	return aTemplate().Alert()
+}
+
+func aDataTable() types.DataTableAttribute {
+	return aTemplate().DataTable()
+}
+
+func aTab() types.TabsAttribute {
+	return aTemplate().Tabs()
 }

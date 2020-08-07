@@ -5,7 +5,9 @@ import (
 	"goadminapi/modules/db"
 	"goadminapi/modules/service"
 	"goadminapi/plugins/admin/modules/form"
+	"goadminapi/plugins/admin/modules/paginator"
 	"goadminapi/plugins/admin/modules/parameter"
+	"html/template"
 	"sync"
 	"sync/atomic"
 
@@ -42,10 +44,10 @@ type PrimaryKey struct {
 }
 
 type PanelInfo struct {
-	Thead          types.Thead              `json:"thead"`
-	InfoList       types.InfoList           `json:"info_list"`
-	FilterFormData types.FormFields         `json:"filter_form_data"`
-	Paginator      types.PaginatorAttribute `json:"-"`
+	Thead          types.Thead              `json:"thead"` // 介面上的欄位資訊，是否可編輯、編輯選項、是否隱藏...等資訊
+	InfoList       types.InfoList           `json:"info_list"` // 顯示在介面上的所有資料
+	FilterFormData types.FormFields         `json:"filter_form_data"` // 可以篩選條件的欄位
+	Paginator      types.PaginatorAttribute `json:"-"` // 設置分頁資訊
 	Title          string                   `json:"title"`
 	Description    string                   `json:"description"`
 }
@@ -160,3 +162,22 @@ func (base *BaseTable) GetOnlyNewForm() bool { return base.OnlyNewForm }
 
 // 回傳是否只有取得細節的權限
 func (base *BaseTable) GetOnlyDetail() bool { return base.OnlyDetail }
+
+// ------------------------table(interface)的方法---------------------
+
+// GetPaginator 設置分頁資訊
+func (base *BaseTable) GetPaginator(size int, params parameter.Parameters, extraHtml ...template.HTML) types.PaginatorAttribute {
+
+	var eh template.HTML
+
+	if len(extraHtml) > 0 {
+		eh = extraHtml[0]
+	}
+	// Get 設置分頁資訊
+	return paginator.Get(paginator.Config{
+		Size:  size,
+		Param: params,
+		// 單頁顯示資料筆數選項，ex:[10,20,30,50,100]
+		PageSizeList: base.Info.GetPageSizeList(),
+	}).SetExtraInfo(eh)
+}

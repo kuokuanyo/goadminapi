@@ -27,7 +27,7 @@ type Parameters struct {
 	PageSize    string
 	PageSizeInt int
 	SortField   string
-	Columns     []string // 為顯示的欄位
+	Columns     []string // 選擇顯示的欄位
 	SortType    string
 	Animation   bool
 	URLPath     string
@@ -276,6 +276,62 @@ func (param Parameters) PKs() []string {
 	return strings.Split(param.GetFieldValue("__pk"), ",")
 }
 
+// 設置第n(參數)頁至Parameters.Page
+func (param Parameters) SetPage(page string) Parameters {
+	param.Page = page
+	return param
+}
+
+// 取得url參數(沒有PageSize)
+func (param Parameters) GetRouteParamStrWithoutPageSize(page string) string {
+	p := url.Values{}
+	p.Add("__sort", param.SortField)
+	p.Add("__page", page)
+	p.Add("__sort_type", param.SortType)
+	if len(param.Columns) > 0 {
+		p.Add("__columns", strings.Join(param.Columns, ","))
+	}
+	for key, value := range param.Fields {
+		p[key] = value
+	}
+	return "?" + p.Encode()
+}
+
+// 取得第n(參數)頁的url參數
+func (param Parameters) URLNoAnimation(page string) string {
+	return param.URLPath + param.SetPage(page).GetRouteParamStr() + "&" + "__no_animation_" + "=true"
+}
+
+// 將__pageSize、__no_animation_...等資訊加入url.Values(map[string][]string)後編碼回傳(沒有sort參數)
+func (param Parameters) GetFixedParamStrWithoutSort() string {
+	p := url.Values{}
+	p.Add("__pageSize", param.PageSize)
+	for key, value := range param.Fields {
+		p[key] = value
+	}
+	// NoAnimationKey = __go_admin_no_animation_
+	p.Add("__no_animation_", "true")
+	if len(param.Columns) > 0 {
+		// Columns = __columns
+		p.Add("__columns", strings.Join(param.Columns, ","))
+	}
+	return "&" + p.Encode()
+}
+
+// GetLastPageRouteParamStr 取得前一頁的url參數，例如在第二頁時回傳第一頁的url參數
+func (param Parameters) GetLastPageRouteParamStr() string {
+	p := param.GetFixedParamStr()
+	p.Add("__page", strconv.Itoa(param.PageInt-1))
+	return "?" + p.Encode()
+}
+
+// GetNextPageRouteParamStr 取得下一頁的url參數，例如在第二頁時回傳第三頁的url參數
+func (param Parameters) GetNextPageRouteParamStr() string {
+	p := param.GetFixedParamStr()
+	p.Add("__page", strconv.Itoa(param.PageInt+1))
+	return "?" + p.Encode()
+}
+
 // 如果過濾值為範圍，設值起始值
 func (param Parameters) GetFilterFieldValueStart(field string) string {
 	return param.GetFieldValue(field + "_start")
@@ -298,4 +354,25 @@ func (param Parameters) GetFieldOperator(field, suffix string) string {
 		return "eq"
 	}
 	return op
+}
+
+// 判斷__is_all是否 = true
+func (param Parameters) IsAll() bool {
+	return param.GetFieldValue("__is_all") == "true"
+}
+
+// WithIsAll 添加Parameters.Fields["__is_all"]
+func (param Parameters) WithIsAll(isAll bool) Parameters {
+	if isAll {
+		param.Fields["__is_all"] = []string{"true"}
+	} else {
+		param.Fields["__is_all"] = []string{"false"}
+	}
+	return param
+}
+
+// DeleteIsAll 刪除Parameters.Fields["__is_all"]
+func (param Parameters) DeleteIsAll() Parameters {
+	delete(param.Fields, "__is_all")
+	return param
 }

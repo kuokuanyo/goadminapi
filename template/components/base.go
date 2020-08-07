@@ -114,3 +114,10 @@ func (b Base) Label() types.LabelAttribute {
 		Attribute: b.Attribute,
 	}
 }
+
+func (b Base) Paginator() types.PaginatorAttribute {
+	return &PaginatorAttribute{
+		Name:      "paginator",
+		Attribute: b.Attribute,
+	}
+}

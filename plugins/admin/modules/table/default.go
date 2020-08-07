@@ -6,6 +6,7 @@ import (
 	"goadminapi/modules/db/dialect"
 	"goadminapi/plugins/admin/modules"
 	"goadminapi/plugins/admin/modules/form"
+	"goadminapi/plugins/admin/modules/paginator"
 	"goadminapi/plugins/admin/modules/parameter"
 	"html/template"
 	"io/ioutil"
@@ -79,8 +80,8 @@ func NewDefaultTable(cfgs ...Config) Table {
 
 //-----------------------------table(interface)的方法--------------------------------
 
-// GetData 透過參數處理sql語法後取得資料表資料並將值設置至PanelInfo(struct)
-// PanelInfo裡的資訊有主題、描述名稱、可以篩選條件的欄位、選擇顯示的欄位....等資訊
+// GetData 透過參數處理後取得前端介面顯示資料，將值設置至PanelInfo(struct)
+// PanelInfo裡的資訊有主題、描述名稱、可以篩選條件的欄位、選擇顯示的欄位、分頁、[]TheadItem(欄位資訊)等資訊
 func (tb *DefaultTable) GetData(params parameter.Parameters) (PanelInfo, error) {
 	var (
 		data      []map[string]interface{}
@@ -96,10 +97,53 @@ func (tb *DefaultTable) GetData(params parameter.Parameters) (PanelInfo, error) 
 			return tb.GetDataWithIds(params.WithPKs(ids...))
 		}
 	}
+
+	if tb.getDataFun != nil { // 一般都nil
+		data, size = tb.getDataFun(params)
+	} else if tb.sourceURL != "" { // 一般都為空
+		data, size = tb.getDataFromURL(params)
+	} else if tb.Info.GetDataFn != nil { // 一般都為nil;
+		data, size = tb.Info.GetDataFn(params)
+	} else if params.IsAll() {
+		// 透過參數處理後取得前端介面顯示資料，將值設置至PanelInfo(struct)
+		// 設置PanelInfo裡的主題、描述名稱、選擇顯示的資料、[]TheadItem(欄位資訊)
+		return tb.getAllDataFromDatabase(params)
+	} else {
+		// ----------------一般執行此條件後直接return-----------------
+		// 透過參數處理後取得前端介面顯示資料，將值設置至PanelInfo(struct)
+		// 設置PanelInfo裡的主題、描述名稱、可以篩選條件的欄位、選擇顯示的資料、分頁、[]TheadItem(欄位資訊)
+		return tb.getDataFromDatabase(params)
+	}
+
+	infoList := make(types.InfoList, 0)
+	for i := 0; i < len(data); i++ {
+		infoList = append(infoList, tb.getTempModelData(data[i], params, []string{}))
+	}
+
+	thead, _, _, _, _, filterForm := tb.getTheadAndFilterForm(params, []string{})
+	endTime := time.Now()
+	extraInfo := ""
+
+	if !tb.Info.IsHideQueryInfo {
+		extraInfo = fmt.Sprintf("<b>" + "query time" + ": </b>" +
+			fmt.Sprintf("%.3fms", endTime.Sub(beginTime).Seconds()*1000))
+	}
+	return PanelInfo{
+		Thead:    thead,
+		InfoList: infoList,
+		Paginator: paginator.Get(paginator.Config{
+			Size:         size,
+			Param:        params,
+			PageSizeList: tb.Info.GetPageSizeList(),
+		}).SetExtraInfo(template.HTML(extraInfo)),
+		Title:          tb.Info.Title,
+		FilterFormData: filterForm,
+		Description:    tb.Info.Description,
+	}, nil
 }
 
-// GetDataWithIds 透過參數(選擇取得特定id資料)處理sql語法後取得資料表資料並將值設置至PanelInfo(struct)
-// PanelInfo裡的資訊有主題、描述名稱、可以篩選條件的欄位、選擇顯示的欄位....等資訊
+// GetDataWithIds 透過參數(選擇取得特定id資料)處理後取得前端介面顯示資料，將值設置至PanelInfo(struct)
+// PanelInfo裡的資訊有主題、描述名稱、可以篩選條件的欄位、選擇顯示的欄位、分頁、[]TheadItem(欄位資訊)等資訊
 func (tb *DefaultTable) GetDataWithIds(params parameter.Parameters) (PanelInfo, error) {
 	var (
 		data      []map[string]interface{}
@@ -114,11 +158,36 @@ func (tb *DefaultTable) GetDataWithIds(params parameter.Parameters) (PanelInfo, 
 	} else if tb.Info.GetDataFn != nil {
 		data, size = tb.Info.GetDataFn(params)
 	} else {
-		// 透過參數處理sql語法後接著取得資料表資料，判斷條件處理最後將值設置至PanelInfo(struct)並回傳
-		// PanelInfo裡的資訊有主題、描述名稱、可以篩選條件的欄位、選擇顯示的欄位資訊
-		// ----------大部分匯出資料都執行這動作後return-------------------
+		// 透過參數處理後取得前端介面顯示資料，將值設置至PanelInfo(struct)
+		// 設置PanelInfo裡的主題、描述名稱、可以篩選條件的欄位、選擇顯示的資料、分頁、[]TheadItem(欄位資訊)
+		// ----------大部分取得資料都執行此動作後直接return-------------------
 		return tb.getDataFromDatabase(params)
 	}
+
+	infoList := make([]map[string]types.InfoItem, 0)
+
+	for i := 0; i < len(data); i++ {
+		infoList = append(infoList, tb.getTempModelData(data[i], params, []string{}))
+	}
+
+	thead, _, _, _, _, filterForm := tb.getTheadAndFilterForm(params, []string{})
+
+	endTime := time.Now()
+
+	return PanelInfo{
+		Thead:    thead,
+		InfoList: infoList,
+		Paginator: paginator.Get(paginator.Config{
+			Size:         size,
+			Param:        params,
+			PageSizeList: tb.Info.GetPageSizeList(),
+		}).
+			SetExtraInfo(template.HTML(fmt.Sprintf("<b>" + "query time" + ": </b>" +
+				fmt.Sprintf("%.3fms", endTime.Sub(beginTime).Seconds()*1000)))),
+		Title:          tb.Info.Title,
+		FilterFormData: filterForm,
+		Description:    tb.Info.Description,
+	}, nil
 }
 
 // InsertData insert data.
@@ -589,8 +658,74 @@ func (tb *DefaultTable) getTempModelData(res map[string]interface{}, params para
 	return tempModelData
 }
 
-// 透過參數處理sql語法後接著取得資料表資料，判斷條件處理最後將值設置至PanelInfo(struct)
-// PanelInfo裡的資訊有主題、描述名稱、可以篩選條件的欄位、選擇顯示的欄位資訊
+// 透過參數處理後取得前端介面顯示資料，將值設置至PanelInfo(struct)
+// 設置PanelInfo裡的主題、描述名稱、選擇顯示的資料、[]TheadItem(欄位資訊)
+func (tb *DefaultTable) getAllDataFromDatabase(params parameter.Parameters) (PanelInfo, error) {
+	var (
+		connection     = tb.db()
+		queryStatement = "select %s from %s %s %s %s order by " + modules.Delimiter(connection.GetDelimiter(), "%s") + " %s"
+	)
+
+	// columns, _ := tb.getColumns(tb.Info.Table)
+	columns, _ := tb.getColumns(tb.Info.Table)
+
+	thead, fields, joins := tb.Info.FieldList.GetThead(types.TableInfo{
+		Table:      tb.Info.Table,
+		Delimiter:  tb.db().GetDelimiter(),
+		Driver:     tb.connectionDriver,
+		PrimaryKey: tb.PrimaryKey.Name,
+	}, params, columns)
+
+	fields += tb.Info.Table + "." + modules.FilterField(tb.PrimaryKey.Name, connection.GetDelimiter())
+
+	groupBy := ""
+	if joins != "" {
+		groupBy = " GROUP BY " + tb.Info.Table + "." + modules.Delimiter(connection.GetDelimiter(), tb.PrimaryKey.Name)
+	}
+
+	var (
+		wheres    = ""
+		whereArgs = make([]interface{}, 0)
+		existKeys = make([]string, 0)
+	)
+
+	// Statement 取得wheres語法、where數值、existKeys([]string)
+	wheres, whereArgs, existKeys = params.Statement(wheres, tb.Info.Table, connection.GetDelimiter(), whereArgs, columns, existKeys,
+		tb.Info.FieldList.GetFieldFilterProcessValue)
+	// Statement 處理wheres語法及where值後回傳
+	wheres, whereArgs = tb.Info.Wheres.Statement(wheres, connection.GetDelimiter(), whereArgs, existKeys, columns)
+	wheres, whereArgs = tb.Info.WhereRaws.Statement(wheres, whereArgs)
+	if wheres != "" {
+		wheres = " where " + wheres
+	}
+
+	if !modules.InArray(columns, params.SortField) {
+		params.SortField = tb.PrimaryKey.Name
+	}
+
+	queryCmd := fmt.Sprintf(queryStatement, fields, tb.Info.Table, joins, wheres, groupBy, params.SortField, params.SortType)
+	res, err := connection.QueryWithConnection(tb.connection, queryCmd, whereArgs...)
+	if err != nil {
+		return PanelInfo{}, err
+	}
+
+	infoList := make([]map[string]types.InfoItem, 0)
+	for i := 0; i < len(res); i++ {
+		// getTempModelData 取得顯示在頁面上的資料(只取得選擇要顯示的欄位)
+		// 不管有沒有選擇要顯示ID欄位，都會將數值加入map[string]types.InfoItem
+		infoList = append(infoList, tb.getTempModelData(res[i], params, columns))
+	}
+
+	return PanelInfo{
+		InfoList:    infoList,
+		Thead:       thead,
+		Title:       tb.Info.Title,
+		Description: tb.Info.Description,
+	}, nil
+}
+
+// 透過參數處理後取得前端介面顯示資料，將值設置至PanelInfo(struct)
+// 設置PanelInfo裡的主題、描述名稱、可以篩選條件的欄位、選擇顯示的資料、分頁、[]TheadItem(欄位資訊)
 func (tb *DefaultTable) getDataFromDatabase(params parameter.Parameters) (PanelInfo, error) {
 	var (
 		connection = tb.db()
@@ -729,6 +864,40 @@ func (tb *DefaultTable) getDataFromDatabase(params parameter.Parameters) (PanelI
 		infoList = append(infoList, tb.getTempModelData(res[i], params, columns))
 	}
 
+	var size int
+
+	// ------一般會len(ids)=0，會執行------------
+	if len(ids) == 0 {
+		// 計算資料筆數語法
+		countCmd := fmt.Sprintf(countStatement, tb.Info.Table, joins, wheres)
+		// ex: total: [map[count(*):4]](4筆)
+		total, err := connection.QueryWithConnection(tb.connection, countCmd, whereArgs...)
+		if err != nil {
+			return PanelInfo{}, err
+		}
+
+		if tb.connectionDriver == "postgresql" {
+			size = int(total[0]["count"].(int64))
+		} else if tb.connectionDriver == "mssql" {
+			size = int(total[0]["size"].(int64))
+		} else {
+			size = int(total[0]["count(*)"].(int64)) // ex:4(4筆符合)
+		}
+	}
+
+	endTime := time.Now()
+
+	return PanelInfo{
+		Thead:    thead,
+		InfoList: infoList, // 顯示在介面上的所有資料
+		// GetPaginator 設置分頁資訊
+		Paginator: tb.GetPaginator(size, params,
+			template.HTML(fmt.Sprintf("<b>"+"query time"+": </b>"+
+				fmt.Sprintf("%.3fms", endTime.Sub(beginTime).Seconds()*1000)))),
+		Title:          tb.Info.Title,       // 左上角主題
+		FilterFormData: filterForm,          // 可以篩選條件的欄位
+		Description:    tb.Info.Description, //主題旁的描述
+	}, nil
 }
 
 // getDataFromURL(從url中取得data)

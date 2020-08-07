@@ -15,7 +15,7 @@ import (
 	"goadminapi/plugins/admin/modules/parameter"
 )
 
-var DefaultPageSizeList = []int{10, 20, 30, 50, 100}
+var DefaultPageSizeList = []int{10, 20, 30, 50, 100} // 單頁顯示資料筆數選項
 var JoinFieldValueDelimiter = utils.Uuid(8)
 
 const DefaultPageSize = 10
@@ -227,6 +227,13 @@ type InfoItem struct {
 	Value   string        `json:"value"`
 }
 
+type DefaultAction struct {
+	Attr   template.HTML
+	JS     template.JS
+	Ext    template.HTML
+	Footer template.HTML
+}
+
 // 預設InfoPanel(struct)
 func NewInfoPanel(pk string) *InfoPanel {
 	return &InfoPanel{
@@ -418,6 +425,60 @@ func (f Field) GetFilterFormFields(params parameter.Parameters, headField string
 
 	}
 	return filterForm
+}
+
+// 取得[]TheadItem(欄位資訊)、欄位名稱、join語法(left join....)
+func (f FieldList) GetThead(info TableInfo, params parameter.Parameters, columns []string) (Thead, string, string) {
+	var (
+		thead      = make(Thead, 0)
+		fields     = ""
+		joins      = ""
+		joinTables = make([]string, 0)
+	)
+
+	for _, field := range f {
+		// ------ID以及跟其他表關聯的欄位不會執行--------
+		if field.Field != info.PrimaryKey && modules.InArray(columns, field.Field) &&
+			!field.Joins.Valid() {
+			// ex: users.`username`,users.`name`,users.`created_at`,users.`updated_at`,
+			fields += info.Table + "." + modules.FilterField(field.Field, info.Delimiter) + ","
+		}
+
+		headField := field.Field
+
+		if field.Joins.Valid() {
+			headField = field.Joins.Last().Table + "_join_" + field.Field
+			for _, join := range field.Joins {
+				if !modules.InArray(joinTables, join.Table) {
+					joinTables = append(joinTables, join.Table)
+					if join.BaseTable == "" {
+						join.BaseTable = info.Table
+					}
+					// ex: joins =  left join `role_users` on role_users.`user_id` = users.`id` left join....
+					joins += " left join " + modules.FilterField(join.Table, info.Delimiter) + " on " +
+						join.Table + "." + modules.FilterField(join.JoinField, info.Delimiter) + " = " +
+						join.BaseTable + "." + modules.FilterField(join.Field, info.Delimiter)
+				}
+			}
+		}
+		// 檢查欄位是否隱藏
+		if field.Hide {
+			continue
+		}
+
+		thead = append(thead, TheadItem{
+			Head:     field.Head,
+			Sortable: field.Sortable,
+			Field:    headField,
+			// params.Columns為顯示的欄位
+			Hide:       !modules.InArrayWithoutEmpty(params.Columns, headField), // 是否隱藏欄位
+			Editable:   field.EditAble,
+			EditType:   field.EditType.String(),
+			EditOption: field.EditOptions,
+			Width:      strconv.Itoa(field.Width) + "px",
+		})
+	}
+	return thead, fields, joins
 }
 
 // 取得[]TheadItem(欄位資訊)、欄位名稱、joinFields(ex:group_concat(goadmin_roles.`name`...)、join語法(left join....)、合併的資料表、可篩選過濾的欄位
@@ -613,6 +674,15 @@ func (i *InfoPanel) SetDescription(desc string) *InfoPanel {
 	return i
 }
 
+// GetPageSizeList 取得單頁顯示資料筆數選項
+func (i *InfoPanel) GetPageSizeList() []string {
+	var pageSizeList = make([]string, len(i.PageSizeList))
+	for j := 0; j < len(i.PageSizeList); j++ {
+		pageSizeList[j] = strconv.Itoa(i.PageSizeList[j])
+	}
+	return pageSizeList
+}
+
 // FieldSortable 設置為可排序
 func (i *InfoPanel) FieldSortable() *InfoPanel {
 	i.FieldList[i.curFieldListIndex].Sortable = true
@@ -651,6 +721,29 @@ func (i *InfoPanel) GetSort() string {
 	default:
 		return "desc"
 	}
+}
+
+// GroupBy get []InfoList
+func (i InfoList) GroupBy(groups TabGroups) []InfoList {
+	var res = make([]InfoList, len(groups))
+
+	for key, value := range groups {
+		var newInfoList = make(InfoList, len(i))
+
+		for index, info := range i {
+			var newRow = make(map[string]InfoItem)
+			for mk, m := range info {
+				if modules.InArray(value, mk) {
+					newRow[mk] = m
+				}
+			}
+			newInfoList[index] = newRow
+		}
+
+		res[key] = newInfoList
+	}
+
+	return res
 }
 
 // return table_join_field
@@ -722,4 +815,37 @@ func (wh WhereRaw) check() int {
 		}
 	}
 	return index
+}
+
+// *****************FieldModelValue([]string)的方法*******************
+
+// 設置DefaultAction(struct)
+func NewDefaultAction(attr, ext, footer template.HTML, js template.JS) *DefaultAction {
+	return &DefaultAction{Attr: attr, Ext: ext, Footer: footer, JS: js}
+}
+
+// *****************Action(interface)的所有方法*******************
+
+// SetBtnId no return
+func (def *DefaultAction) SetBtnId(btnId string)        {}
+// SetBtnData no return 
+func (def *DefaultAction) SetBtnData(data interface{})  {}
+// Js get DefaultAction.JS
+func (def *DefaultAction) Js() template.JS              { return def.JS }
+// BtnAttribute get DefaultAction.Attr
+func (def *DefaultAction) BtnAttribute() template.HTML  { return def.Attr }
+// BtnClass return ""
+func (def *DefaultAction) BtnClass() template.HTML      { return "" }
+// ExtContent get DefaultAction.Ext
+func (def *DefaultAction) ExtContent() template.HTML    { return def.Ext }
+// FooterContent get DefaultAction.Footer
+func (def *DefaultAction) FooterContent() template.HTML { return def.Footer }
+// GetCallbacks get context.Node{}
+func (def *DefaultAction) GetCallbacks() context.Node   { return context.Node{} }
+
+// *****************Action(interface)的所有方法*******************
+
+// 判斷TabGroups([][]string)是否長度大於0
+func (t TabGroups) Valid() bool {
+	return len(t) > 0
 }

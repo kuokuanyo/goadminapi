@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"goadminapi/modules/db"
+	"goadminapi/modules/utils"
 
 	"goadminapi/context"
 	"goadminapi/plugins/admin/modules/form"
@@ -70,9 +71,9 @@ type FormField struct {
 	CustomJs      template.JS   `json:"custom_js"`
 	CustomCss     template.CSS  `json:"custom_css"`
 
-	Editable    bool `json:"editable"` // 允許編輯
+	Editable    bool `json:"editable"`      // 允許編輯
 	NotAllowAdd bool `json:"not_allow_add"` // 不允許增加
-	Must        bool `json:"must"` // 該欄位必填
+	Must        bool `json:"must"`          // 該欄位必填
 	Hide        bool `json:"hide"`
 
 	Width int `json:"width"`
@@ -80,7 +81,7 @@ type FormField struct {
 	InputWidth int `json:"input_width"`
 	HeadWidth  int `json:"head_width"`
 
-	Joins Joins `json:"-"` 
+	Joins Joins `json:"-"`
 
 	Divider      bool   `json:"divider"`
 	DividerTitle string `json:"divider_title"`

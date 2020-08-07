@@ -2,6 +2,7 @@ package types
 
 import (
 	"goadminapi/modules/menu"
+	"goadminapi/plugins/admin/modules"
 	"goadminapi/template/types/form"
 	"html/template"
 )
@@ -9,12 +10,12 @@ import (
 type Thead []TheadItem
 type TheadItem struct {
 	Head       string       `json:"head"`
-	Sortable   bool         `json:"sortable"`
+	Sortable   bool         `json:"sortable"` // 是否可排序
 	Field      string       `json:"field"`
-	Hide       bool         `json:"hide"`
-	Editable   bool         `json:"editable"`
-	EditType   string       `json:"edit_type"`
-	EditOption FieldOptions `json:"edit_option"`
+	Hide       bool         `json:"hide"`        // 欄位是否隱藏
+	Editable   bool         `json:"editable"`    // 是否可編輯
+	EditType   string       `json:"edit_type"`   // 編輯類型
+	EditOption FieldOptions `json:"edit_option"` // 編輯選項
 	Width      string       `json:"width"`
 }
 
@@ -266,4 +267,23 @@ type ButtonAttribute interface {
 	SetThemeDefault() ButtonAttribute
 	SetType(string) ButtonAttribute
 	GetContent() template.HTML
+}
+
+// GroupBy get []Thead
+func (t Thead) GroupBy(group [][]string) []Thead {
+	var res = make([]Thead, len(group))
+
+	for key, value := range group {
+		var newThead = make(Thead, len(t))
+
+		for index, info := range t {
+			if modules.InArray(value, info.Field) {
+				newThead[index] = info
+			}
+		}
+
+		res[key] = newThead
+	}
+
+	return res
 }

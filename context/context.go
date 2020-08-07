@@ -263,6 +263,11 @@ func (ctx *Context) IsPjax() bool {
 	return ctx.Headers("X-PJAX") == "true"
 }
 
+// Method 取得Method
+func (r Router) Method() string {
+	return r.Methods[0]
+}
+
 // GetURL 處理URL後回傳(處理url中有:__的字串)
 func (r Router) GetURL(value ...string) string {
 	u := r.Patten
