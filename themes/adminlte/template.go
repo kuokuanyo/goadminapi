@@ -200,7 +200,7 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
 
                 <td style="width: 75px;">
                     <div class="{{$.Field}}-remove btn btn-warning btn-sm pull-right">
-                    <i class="fa fa-trash">&nbsp;</i>{{lang "remove"}}
+                    <i class="fa fa-trash">&nbsp;</i>{{"移除"}}
                     </div>
                 </td>
             </tr>
@@ -211,7 +211,7 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
       <td></td>
       <td>
         <div class="{{.Field}}-add btn btn-success btn-sm pull-right">
-          <i class="fa fa-save"></i>&nbsp;{{lang "new"}}
+          <i class="fa fa-save"></i>&nbsp;{{"新增"}}
         </div>
       </td>
     </tr>
@@ -228,7 +228,7 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
     </td>
     <td style="width: 75px;">
       <div class="{{.Field}}-remove btn btn-warning btn-sm pull-right">
-        <i class="fa fa-trash">&nbsp;</i>{{lang "remove"}}
+        <i class="fa fa-trash">&nbsp;</i>{{"移除"}}
       </div>
     </td>
   </tr>
@@ -1302,8 +1302,8 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
     <a class="{{.Class}}" {{.Attributes}} data-title="{{.Title}}" href="{{.URL}}">{{.Content}}</a>
 {{end}}`, "components/paginator": `{{define "paginator"}}
     {{if not .HideEntriesInfo}}
-        <div style="float: left;margin-top: 21px;">{{lang "showing"}} <b>{{.CurPageStartIndex}}</b> {{lang "to"}}
-            <b>{{.CurPageEndIndex}}</b> {{lang "of"}} <b>{{.Total}}</b> {{lang "entries"}} &nbsp;&nbsp;&nbsp;{{.ExtraInfo}}
+        <div style="float: left;margin-top: 21px;">{{"showing"}} <b>{{.CurPageStartIndex}}</b> {{"to"}}
+            <b>{{.CurPageEndIndex}}</b> {{"of"}} <b>{{.Total}}</b> {{"entries"}} &nbsp;&nbsp;&nbsp;{{.ExtraInfo}}
         </div>
     {{end}}
     <ul class="pagination pagination-sm no-margin pull-right">
@@ -1343,7 +1343,7 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
 
     <label class="control-label pull-right" style="margin-right: 10px; font-weight: 100;">
 
-        <small>{{lang "show"}}</small>&nbsp;
+        <small>{{"show"}}</small>&nbsp;
         {{$option := .Option}}
         {{$url := .Url}}
         <select class="input-sm grid-per-pager" name="per-page">
@@ -1353,7 +1353,7 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
                 </option>
             {{end}}
         </select>
-        <small>{{lang "entries"}}</small>
+        <small>{{"entries"}}</small>
     </label>
 
     <script>
@@ -1432,8 +1432,8 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
                     <li class="divider">
                     </li>
                     <li class="text-right">
-                        <button class="btn btn-sm btn-default column-select-all">{{lang "all"}}</button>&nbsp;&nbsp;
-                        <button class="btn btn-sm btn-primary column-select-submit">{{lang "submit"}}</button>
+                        <button class="btn btn-sm btn-default column-select-all">{{"全選"}}</button>&nbsp;&nbsp;
+                        <button class="btn btn-sm btn-primary column-select-submit">{{"提交"}}</button>
                     </li>
                 </ul>
             </div>
@@ -1443,7 +1443,7 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
 
             <div class="btn-group pull-right" style="margin-right: 10px">
                 <a href="javascript:;" class="btn btn-sm btn-primary" id="filter-btn"><i
-                            class="fa fa-filter"></i>&nbsp;&nbsp;{{lang "filter"}}</a>
+                            class="fa fa-filter"></i>&nbsp;&nbsp;{{"篩選"}}</a>
             </div>
 
             <script>
@@ -1457,87 +1457,37 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
         <div class="btn-group pull-right" style="margin-right: 10px">
             {{if .NewUrl}}
                 <a href="{{.NewUrl}}" class="btn btn-sm btn-success">
-                    <i class="fa fa-plus"></i>&nbsp;&nbsp;{{lang "New"}}
+                    <i class="fa fa-plus"></i>&nbsp;&nbsp;{{"創建"}}
                 </a>
-            {{end}}
-            {{if .ExportUrl}}
-                <div class="btn-group">
-                    <a class="btn btn-sm btn-default">{{lang "Export"}}</a>
-                    <button type="button" class="btn btn-sm btn-default dropdown-toggle" data-toggle="dropdown">
-                        <span class="caret"></span>
-                        <span class="sr-only">{{lang "Toggle Dropdown"}}</span>
-                    </button>
-                    <ul class="dropdown-menu" role="menu">
-                        <li><a href="#" id="export-btn-0">{{lang "Current Page"}}</a></li>
-                        {{if .ExportUrl}}
-                            <li><a href="#" id="export-btn-1">{{lang "All"}}</a></li>
-                        {{end}}
-                    </ul>
-                </div>
             {{end}}
         </div>
         {{renderRowDataHTML "" .Buttons}}
     </div>
     <span>
-        {{if or .DeleteUrl .ExportUrl}}
+        {{if or .DeleteUrl}}
             <div class="btn-group">
-                <a class="btn btn-sm btn-default">{{lang "Action"}}</a>
+                <a class="btn btn-sm btn-default">{{"操作"}}</a>
                 <button type="button" class="btn btn-sm btn-default dropdown-toggle" data-toggle="dropdown">
                 <span class="caret"></span>
-                <span class="sr-only">{{lang "Toggle Dropdown"}}</span>
+                <span class="sr-only">{{"下拉"}}</span>
                 </button>
                 <ul class="dropdown-menu" role="menu">
                     {{if .DeleteUrl}}
-                        <li><a href="#" class="grid-batch-0">{{lang "Delete"}}</a></li>
-                    {{end}}
-                    {{if .ExportUrl}}
-                        <li><a href="#" class="grid-batch-1">{{lang "Export"}}</a></li>
+                        <li><a href="#" class="grid-batch-0">{{"刪除"}}</a></li>
                     {{end}}
                 </ul>
             </div>
         {{end}}
         <a class="btn btn-sm btn-primary grid-refresh">
-            <i class="fa fa-refresh"></i> {{lang "Refresh"}}
+            <i class="fa fa-refresh"></i> {{"刷新"}}
         </a>
     </span>
     <script>
-        let toastMsg = '{{lang "Refresh succeeded"}} !';
+        let toastMsg = '{{"刷新成功"}} !';
         $('.grid-refresh').unbind('click').on('click', function () {
             $.pjax.reload('#pjax-container');
             toastr.success(toastMsg);
         });
-
-        {{if .ExportUrl}}
-
-        $("#export-btn-0").click(function () {
-            ExportData("false")
-        });
-        $("#export-btn-1").click(function () {
-            ExportData("true")
-        });
-
-        function ExportData(isAll) {
-            let form = $("<form>");
-            form.attr("style", "display:none");
-            form.attr("target", "");
-            form.attr("method", "post");
-            form.attr("action",{{.ExportUrl}});
-            let input1 = $("<input>");
-            input1.attr("type", "hidden");
-            input1.attr("name", "time");
-            input1.attr("value", (new Date()).getTime());
-            let input2 = $("<input>");
-            input2.attr("type", "hidden");
-            input2.attr("name", "is_all");
-            input2.attr("value", isAll);
-            $("body").append(form);
-            form.append(input1);
-            form.append(input2);
-            form.submit();
-            form.remove()
-        }
-
-        {{end}}
     </script>
 {{end}}`, "components/table": `{{define "table"}}
     <table class="table table-{{.Style}}" style="min-width: {{.MinWidth}};table-layout: {{.Layout}};">
@@ -1587,7 +1537,7 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
                     {{end}}
                 {{end}}
                 {{if eq .NoAction false}}
-                    <th style="text-align: center;">{{lang "operation"}}</th>
+                    <th style="text-align: center;">{{"操作"}}</th>
                 {{end}}
             </tr>
         {{end}}
@@ -1598,7 +1548,6 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
         {{$Thead := .Thead}}
         {{$Type := .Type}}
         {{$EditUrl := .EditUrl}}
-        {{$UpdateUrl := .UpdateUrl}}
         {{$IsTab := .IsTab}}
         {{$DeleteUrl := .DeleteUrl}}
         {{$DetailUrl := .DetailUrl}}
@@ -1627,7 +1576,6 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
                                                data-on-color="{{js (index (index $head2.EditOption 0).Extra "onColor")}}"
                                                data-off-color="{{index (index $head2.EditOption 0).Extra "offColor"}}"
                                                data-field="{{$head2.Field}}"
-                                               data-updateurl="{{$UpdateUrl}}"
                                                data-pk="{{(index $info $PrimaryKey).Content}}"
                                                type="checkbox" name="__checkbox__edit_info"
                                                 {{if eq (index $head2.EditOption 0).Value (index $info $head2.Field).Value}}
@@ -1640,7 +1588,7 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
                                         <a href="#" class="editable-td-{{$head2.EditType}}"
                                            data-pk="{{(index $info $PrimaryKey).Content}}"
                                            data-source='{{$head2.EditOption.Marshal}}'
-                                           data-url="{{$UpdateUrl}}"
+
                                            data-value="{{(index $info $head2.Field).Value}}"
                                            data-name="{{$head2.Field}}"
                                            data-title="Enter {{$head2.Head}}">{{(index $info $head2.Field).Content}}</a>
@@ -1655,7 +1603,7 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
                         <td style="text-align: center;">
                             {{if eq $Action ""}}
                                 {{if $EditUrl}}
-                                    <a href='{{$EditUrl}}&__goadmin_edit_pk={{(index $info $PrimaryKey).Content}}'><i
+                                    <a href='{{$EditUrl}}&__edit_pk={{(index $info $PrimaryKey).Content}}'><i
                                                 class="fa fa-edit"></i></a>
                                 {{end}}
                                 {{if $DeleteUrl}}
@@ -1663,7 +1611,7 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
                                        class="grid-row-delete"><i class="fa fa-trash"></i></a>
                                 {{end}}
                                 {{if $DetailUrl}}
-                                    <a href="{{$DetailUrl}}&__goadmin_detail_pk={{(index $info $PrimaryKey).Content}}"
+                                    <a href="{{$DetailUrl}}&__detail_pk={{(index $info $PrimaryKey).Content}}"
                                        class="grid-row-view">
                                         <i class="fa fa-eye"></i>
                                     </a>
@@ -1707,7 +1655,7 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
             };
 
             const pjaxContainer = "#pjax-container";
-            const noAnimation = "__go_admin_no_animation_";
+            const noAnimation = "__no_animation_";
 
             function iCheck(el) {
                 el.iCheck({checkboxClass: 'icheckbox_minimal-blue'}).on('ifChanged', function () {
@@ -1829,46 +1777,12 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
                     container: pjaxContainer
                 });
 
-                toastr.success('{{lang "reload succeeded"}} !');
+                toastr.success('{{"重載成功"}} !');
             });
 
             {{end}}
 
-            // ============================
-            // end
-            // ============================
-
-            // ============================
-            // .ExportUrl
-            // ============================
-
-            {{if .ExportUrl}}
-
-            $('.grid-batch-1').on('click', function () {
-                let rows = selectedRows();
-                if (rows.length > 0) {
-                    ExportAll(rows.join())
-                }
-            });
-
-            function ExportAll(id) {
-                let form = $("<form>");
-                form.attr("style", "display:none");
-                form.attr("target", "");
-                form.attr("method", "post");
-                form.attr("action",{{.ExportUrl}});
-                let input1 = $("<input>");
-                input1.attr("type", "hidden");
-                input1.attr("name",{{.PrimaryKey}});
-                input1.attr("value", id);
-                $("body").append(form);
-                form.append(input1);
-                form.submit();
-                form.remove()
-            }
-
-            {{end}}
-
+    
             // ============================
             // end
             // ============================
@@ -1892,13 +1806,13 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
 
             function DeletePost(id) {
                 swal({
-                        title: {{lang "are you sure to delete"}},
+                        title: {{"確定要刪除資料嗎?"}},
                         type: "warning",
                         showCancelButton: true,
                         confirmButtonColor: "#DD6B55",
-                        confirmButtonText: {{lang "yes"}},
+                        confirmButtonText: {{"確定"}},
                         closeOnConfirm: false,
-                        cancelButtonText: {{lang "cancel"}},
+                        cancelButtonText: {{"取消"}},
                     },
                     function () {
                         $.ajax({
@@ -1942,7 +1856,7 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
                                 if (data.responseText !== "") {
                                     swal(data.responseJSON.msg, '', 'error');
                                 } else {
-                                    swal("{{lang "error"}}", '', 'error');
+                                    swal("{{"錯誤"}}", '', 'error');
                                 }
                             },
                         });
@@ -2058,30 +1972,6 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
                         } else {
                             val = obejct.closest('.bootstrap-switch').next().next().val()
                         }
-                        $.ajax({
-                            method: 'post',
-                            url: obejct.data("updateurl"),
-                            data: {
-                                name: obejct.data("field"),
-                                value: val,
-                                pk: obejct.data("pk")
-                            },
-                            success: function (data) {
-                                if (typeof (data) === "string") {
-                                    data = JSON.parse(data);
-                                }
-                                if (data.code !== 200) {
-                                    swal(data.msg, '', 'error');
-                                }
-                            },
-                            error: function (data) {
-                                if (data.responseText !== "") {
-                                    swal(data.responseJSON.msg, '', 'error');
-                                } else {
-                                    swal("{{lang "error"}}", '', 'error');
-                                }
-                            },
-                        });
                     }
                 })
             });
@@ -2131,11 +2021,11 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
 </div>
 
 <div class="btn-group">
-    <a class="btn btn-info btn-sm  tree-model-save"><i class="fa fa-save"></i>&nbsp;{{lang "save"}}</a>
+    <a class="btn btn-info btn-sm  tree-model-save"><i class="fa fa-save"></i>&nbsp;{{"儲存"}}</a>
 </div>
 
 <div class="btn-group">
-    <a class="btn btn-warning btn-sm tree-model-refresh"><i class="fa fa-refresh"></i>&nbsp;{{lang "refresh"}}</a>
+    <a class="btn btn-warning btn-sm tree-model-refresh"><i class="fa fa-refresh"></i>&nbsp;{{"刷新頁面"}}</a>
 </div>
 <div class="btn-group">
 </div>

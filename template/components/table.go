@@ -100,7 +100,7 @@ type DataTableAttribute struct {
 	types.Attribute
 }
 
-// 首先將符合TemplateList["components/table/box-header"]的值加入text(string)，接著將方法加入並解析模板
+// GetDataTableHeader 取得按鈕(新建、操作...等)HTML
 func (compo *DataTableAttribute) GetDataTableHeader() template.HTML {
 	return ComposeHtml(compo.TemplateList, *compo, "table/box-header")
 }
@@ -215,8 +215,7 @@ func (compo *DataTableAttribute) SetNoAction() types.DataTableAttribute {
 	return compo
 }
 
-// 判斷條件DataTableAttribute.MinWidth是否為空，如果為空則設置DataTableAttribute.MinWidth = "1000px"
-// 接著將符合TemplateList["components/table"]的值加入text(string)，接著將方法加入並解析模板
+// GetContent 取得介面上的數據資料HTML
 func (compo *DataTableAttribute) GetContent() template.HTML {
 	if compo.MinWidth == "" {
 		compo.MinWidth = "1000px"

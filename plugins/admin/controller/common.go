@@ -5,7 +5,9 @@ import (
 	"goadminapi/modules/auth"
 	c "goadminapi/modules/config"
 	"goadminapi/modules/menu"
+	"goadminapi/template/icon"
 	"goadminapi/template/types"
+	template2 "html/template"
 	"regexp"
 
 	"goadminapi/context"
@@ -185,6 +187,31 @@ func (h *Handler) table(prefix string, ctx *context.Context) table.Table {
 	return t
 }
 
+// filterFormFooter 取得過濾表單中的按鈕(搜尋、重置)...等HTML語法
+func filterFormFooter(infoUrl string) template2.HTML {
+	col1 := aCol().SetSize(types.SizeMD(2)).GetContent()
+	// 搜尋按鈕HTML
+	btn1 := aButton().SetType("submit").
+		SetContent(icon.Icon("fa-search", 2) + template.HTML("search")).
+		SetThemePrimary().
+		SetSmallSize().
+		SetOrientationLeft().
+		SetLoadingText(icon.Icon("fa-search", 1) + template.HTML("search")).
+		GetContent()
+	// 重置按鈕HTML
+	btn2 := aButton().SetType("reset").
+		SetContent(icon.Icon("fa-undo", 2) + template.HTML("reset")).
+		SetThemeDefault().
+		SetOrientationLeft().
+		SetSmallSize().
+		SetHref(infoUrl).
+		SetMarginLeft(12).
+		GetContent()
+	col2 := aCol().SetSize(types.SizeMD(8)).
+		SetContent(btn1 + btn2).GetContent()
+	return col1 + col2
+}
+
 // 將參數h.services.Get(auth.TokenServiceKey)轉換成TokenService(struct)類別後回傳
 func (h *Handler) authSrv() *auth.TokenService {
 	return auth.GetTokenService(h.services.Get("token_csrf_helper"))
@@ -205,4 +232,20 @@ func aDataTable() types.DataTableAttribute {
 
 func aTab() types.TabsAttribute {
 	return aTemplate().Tabs()
+}
+
+func aBox() types.BoxAttribute {
+	return aTemplate().Box()
+}
+
+func aForm() types.FormAttribute {
+	return aTemplate().Form()
+}
+
+func aCol() types.ColAttribute {
+	return aTemplate().Col()
+}
+
+func aButton() types.ButtonAttribute {
+	return aTemplate().Button()
 }

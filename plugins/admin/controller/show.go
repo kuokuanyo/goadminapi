@@ -141,6 +141,7 @@ func (h *Handler) showTableData(ctx *context.Context, prefix string, params para
 	return panel, panelInfo, []string{editUrl, newUrl, deleteUrl, detailUrl, infoUrl}, nil
 }
 
+// showTable 取得前端頁面數據資料及按鈕...等資訊HTML語法
 func (h *Handler) showTable(ctx *context.Context, prefix string, params parameter.Parameters, panel table.Table) *bytes.Buffer {
 	// showTableData 取得table(interface)、PanelInfo(有主題、描述名稱、可以篩選條件的欄位、選擇顯示的欄位、分頁、[]TheadItem(欄位資訊)等資訊)
 	// 以及前端介面會使用到的url路徑
@@ -230,9 +231,9 @@ func (h *Handler) showTable(ctx *context.Context, prefix string, params paramete
 	// --------------------一般都為false-------------------
 	if info.TabGroups.Valid() {
 		dataTable = aDataTable().
-		SetThead(panelInfo.Thead).
-		SetDeleteUrl(deleteUrl).
-		SetNewUrl(newUrl)
+			SetThead(panelInfo.Thead).
+			SetDeleteUrl(deleteUrl).
+			SetNewUrl(newUrl)
 
 		var (
 			tabsHtml    = make([]map[string]template2.HTML, len(info.TabHeaders))
@@ -264,5 +265,75 @@ func (h *Handler) showTable(ctx *context.Context, prefix string, params paramete
 			}
 		}
 		body = aTab().SetData(tabsHtml).GetContent()
+	} else {
+		dataTable = aDataTable().
+			SetInfoList(panelInfo.InfoList).                 // 顯示在介面上的所有資料
+			SetInfoUrl(infoUrl).                             // ex: /admin/info/manager
+			SetButtons(btns).                                // ex:空
+			SetLayout(info.TableLayout).                     // ex:auto
+			SetActionJs(btnsJs + actionJs).                  // ex:空
+			SetAction(actionBtns).                           // ex:空
+			SetHasFilter(len(panelInfo.FilterFormData) > 0). // ex:true(有可以篩選的條件)
+			SetPrimaryKey(panel.GetPrimaryKey().Name).       // ex: id
+			SetThead(panelInfo.Thead).                       // 介面上的欄位資訊，是否可編輯、編輯選項、是否隱藏...等資訊
+			SetHideRowSelector(info.IsHideRowSelector).      // ex: false(沒有隱藏選擇器)
+			SetHideFilterArea(info.IsHideFilterArea).        // ex: true(隱藏過濾條件)
+			SetNewUrl(newUrl).                               // ex: /admin/info/manager/new?__page=1&__pageSize=10&__sort=id&__sort_type=desc
+			SetEditUrl(editUrl).                             // ex: /admin/info/manager/edit?__page=1&__pageSize=10&__sort=id&__sort_type=desc
+			// 將__pageSize、__go_admin_no_animation_...等資訊加入url.Values(map[string][]string)後編碼回傳
+			SetSortUrl(params.GetFixedParamStrWithoutSort()). // ex: &__no_animation_=true&__pageSize=10
+			SetDetailUrl(detailUrl).                          // ex: /admin/info/manager/detail?__page=1&__pageSize=10&__sort=id&__sort_type=desc
+			SetDeleteUrl(deleteUrl)                           // ex: /admin/delete/manager
+
+		// 取得介面上的數據資料HTML
+		body = dataTable.GetContent()
 	}
+
+	paginator := panelInfo.Paginator               // 分頁器語法
+	isNotIframe := ctx.Query("__iframe") != "true" // ex: true
+	if !isNotIframe {
+		paginator = paginator.SetHideEntriesInfo()
+	}
+
+	boxModel := aBox().
+		SetBody(body).
+		SetNoPadding().
+		// GetDataTableHeader 取得按鈕(新建、操作...等)HTML
+		SetHeader(dataTable.GetDataTableHeader() + info.HeaderHtml).
+		WithHeadBorder().
+		SetIframeStyle(!isNotIframe).
+		// GetContent 取得分頁器HTML
+		SetFooter(paginator.GetContent() + info.FooterHtml)
+
+	if len(panelInfo.FilterFormData) > 0 {
+		boxModel = boxModel.SetSecondHeaderClass("filter-area").
+			SetSecondHeader(aForm().
+				SetContent(panelInfo.FilterFormData).     // 可以篩選的欄位資訊
+				SetPrefix(h.config.PrefixFixSlash()).     // ex: /admin
+				SetInputWidth(info.FilterFormInputWidth). //ex: 10
+				SetHeadWidth(info.FilterFormHeadWidth).   //ex: 2
+				SetMethod("get").
+				SetLayout(info.FilterFormLayout). // ex:LayoutDefault
+				SetUrl(infoUrl).
+				SetHiddenFields(map[string]string{
+					"__no_animation_": "true",
+				}).
+				// filterFormFooter 取得過濾表單中的按鈕(搜尋、重置)...等HTML語法
+				SetOperationFooter(filterFormFooter(infoUrl)).
+				// GetContent 取得過濾表單HTML
+				GetContent())
+	}
+
+	content := boxModel.GetContent()
+
+	// ------------一般不會執行--------------------
+	if info.Wrapper != nil {
+		content = info.Wrapper(content)
+	}
+
+	return h.Execute(ctx, user, types.Panel{
+		Content:     content,
+		Description: template2.HTML(panelInfo.Description),
+		Title:       modules.AorBHTML(isNotIframe, template2.HTML(panelInfo.Title), ""),
+	}, params.Animation)
 }

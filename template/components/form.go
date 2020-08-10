@@ -197,8 +197,7 @@ func (compo *FormAttribute) SetOperationFooter(value template.HTML) types.FormAt
 	return compo
 }
 
-// 判斷條件後將FormFields添加至FormAttribute.ContentList([]FormFields)
-// 首先將符合TreeAttribute.TemplateList["components/多個"](map[string]string)的值加入text(string)，接著將方法加入並解析模板
+// GetContent 取得過濾表單HTML
 func (compo *FormAttribute) GetContent() template.HTML {
 	// GetAssetUrl return globalCfg.AssetUrl
 	compo.CdnUrl = config.GetAssetUrl()
@@ -214,7 +213,7 @@ func (compo *FormAttribute) GetContent() template.HTML {
 			// 將FormFields添加至FormAttribute.ContentList([]FormFields)中
 			compo.ContentList[ii] = append(compo.ContentList[ii], compo.Content[i])
 			if i < len(compo.Content)-1 {
-				if strings.Contains(compo.Content[i+1].Field, "__goadmin_operator__") {
+				if strings.Contains(compo.Content[i+1].Field, "__operator__") {
 					compo.ContentList[ii] = append(compo.ContentList[ii], compo.Content[i+1])
 					i++
 				}
@@ -223,8 +222,6 @@ func (compo *FormAttribute) GetContent() template.HTML {
 		}
 	}
 
-	// 首先將符合TreeAttribute.TemplateList["components/多個"](map[string]string)的值加入text(string)，接著將參數及功能添加給新的模板並解析為模板的主體
-	// 將參數compo寫入buffer(bytes.Buffer)中最後輸出HTML
 	return ComposeHtml(compo.TemplateList, *compo, "form",
 		"form/default", "form/file", "form/multi_file", "form/textarea", "form/custom", "form/rate", "form/slider",
 		"form/selectbox", "form/text", "form/table", "form/radio", "form/switch", "form/checkbox", "form/checkbox_single",

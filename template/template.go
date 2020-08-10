@@ -129,11 +129,11 @@ type Template interface {
 
 	// Components
 	// layout
-	// Col() types.ColAttribute
+	Col() types.ColAttribute
 	// Row() types.RowAttribute
 
 	// // form and table
-	// Form() types.FormAttribute
+	Form() types.FormAttribute
 	// Table() types.TableAttribute
 	DataTable() types.DataTableAttribute
 
@@ -145,12 +145,12 @@ type Template interface {
 
 	Paginator() types.PaginatorAttribute
 	// Popup() types.PopupAttribute
-	// Box() types.BoxAttribute
+	Box() types.BoxAttribute
 
 	Label() types.LabelAttribute
 	Image() types.ImgAttribute
 
-	// Button() types.ButtonAttribute
+	Button() types.ButtonAttribute
 
 	// Builder methods
 	// GetTmplList() map[string]string

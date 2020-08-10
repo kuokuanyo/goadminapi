@@ -5,6 +5,7 @@ import (
 	"goadminapi/modules/menu"
 	"goadminapi/template/types"
 	"goadminapi/template/types/form"
+	"html/template"
 )
 
 type Base struct {
@@ -12,6 +13,27 @@ type Base struct {
 }
 
 // ----------------Base(struct)有Template(interface)所有方法-----------------
+func (b Base) Box() types.BoxAttribute {
+	return &BoxAttribute{
+		Name:       "box",
+		Header:     template.HTML(""),
+		Body:       template.HTML(""),
+		Footer:     template.HTML(""),
+		Title:      "",
+		HeadBorder: "",
+		Attribute:  b.Attribute,
+	}
+}
+
+func (b Base) Button() types.ButtonAttribute {
+	return &ButtonAttribute{
+		Name:      "button",
+		Content:   "",
+		Href:      "",
+		Attribute: b.Attribute,
+	}
+}
+
 func (b Base) Col() types.ColAttribute {
 	return &ColAttribute{
 		Name:      "col",

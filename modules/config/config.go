@@ -311,6 +311,17 @@ func (c *Config) IsProductionEnvironment() bool {
 	return c.Env == "prod"
 }
 
+// 將url前綴處理後回傳
+func (c *Config) PrefixFixSlash() string {
+	if c.UrlPrefix == "/" {
+		return ""
+	}
+	if c.UrlPrefix != "" && c.UrlPrefix[0] != '/' {
+		return "/" + c.UrlPrefix
+	}
+	return c.UrlPrefix
+}
+
 // 處理URL
 func (s Store) URL(suffix string) string {
 	if len(suffix) > 4 && suffix[:4] == "http" {

@@ -89,7 +89,7 @@ func (compo *PaginatorAttribute) SetUrl(value string) types.PaginatorAttribute {
 	return compo
 }
 
-// 首先將符合TreeAttribute.TemplateList["components/paginator"](map[string]string)的值加入text(string)，接著將參數及功能添加給新的模板並解析模板
+// GetContent 取得分頁器HTML
 func (compo *PaginatorAttribute) GetContent() template.HTML {
 	return ComposeHtml(compo.TemplateList, *compo, "paginator")
 }

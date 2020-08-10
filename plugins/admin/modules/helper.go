@@ -1,6 +1,10 @@
 package modules
 
-import uuid "github.com/satori/go.uuid"
+import (
+	"html/template"
+
+	uuid "github.com/satori/go.uuid"
+)
 
 // 判斷第二個參數(string)是否存在[]string(第一個參數中)
 func InArray(arr []string, str string) bool {
@@ -76,9 +80,16 @@ func AorB(condition bool, a, b string) string {
 	return b
 }
 
+// AorBHTML 判斷條件選擇HTML
+func AorBHTML(condition bool, a, b template.HTML) template.HTML {
+	if condition {
+		return a
+	}
+	return b
+}
+
 func Uuid() string {
 	uid, _ := uuid.NewV4()
 	rst := uid.String()
 	return rst
 }
-
