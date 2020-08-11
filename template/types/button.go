@@ -47,22 +47,22 @@ type Action interface {
 func (b *BaseButton) Content() (template.HTML, template.JS) { return "", "" }
 
 // GetAction get BaseButton.Action
-func (b *BaseButton) GetAction() Action                     { return b.Action }
+func (b *BaseButton) GetAction() Action { return b.Action }
 
 // ID get BaseButton.ID
-func (b *BaseButton) ID() string                            { return b.Id }
+func (b *BaseButton) ID() string { return b.Id }
 
 // URL get BaseButton.Url
-func (b *BaseButton) URL() string                           { return b.Url }
+func (b *BaseButton) URL() string { return b.Url }
 
 // METHOD get BaseButton.Method
-func (b *BaseButton) METHOD() string                        { return b.Method }
+func (b *BaseButton) METHOD() string { return b.Method }
 
 // GetName get BaseButton.Name
-func (b *BaseButton) GetName() string                       { return b.Name }
+func (b *BaseButton) GetName() string { return b.Name }
 
 // SetName set theme
-func (b *BaseButton) SetName(name string)                   { b.Name = name }
+func (b *BaseButton) SetName(name string) { b.Name = name }
 
 //************************Button(interface)的所有方法****************************
 

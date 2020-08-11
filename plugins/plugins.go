@@ -4,15 +4,15 @@ import (
 	"goadminapi/context"
 	"goadminapi/modules/db"
 	"goadminapi/modules/service"
+	"goadminapi/modules/ui"
 )
 
 // Base(struct)包含Plugin(interface)所有方法
 type Base struct {
-	// context.App在context\context.go中
-	App      *context.App
-	Services service.List
-	Conn     db.Connection
-	//UI        *ui.Service
+	App       *context.App
+	Services  service.List
+	Conn      db.Connection
+	UI        *ui.Service
 	PlugName  string
 	URLPrefix string
 }
@@ -34,10 +34,8 @@ func (b *Base) GetHandler() context.HandlerMap {
 // 透過參數srv(map[string]Service)設置至Base(struct).Services並且設置Base.Conn、Base.UI
 func (b *Base) InitBase(srv service.List) {
 	b.Services = srv
-	// 將參數b.Services轉換為Connect(interface)回傳並回傳
 	b.Conn = db.GetConnection(b.Services)
-	// 將參數b.Services轉換成Service(struct)後回傳
-	//b.UI = ui.GetService(b.Services)
+	b.UI = ui.GetService(b.Services)
 }
 
 // 回傳Base.PlugName

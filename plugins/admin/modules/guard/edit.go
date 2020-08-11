@@ -38,6 +38,10 @@ func (e EditFormParam) Value() form.Values {
 	return e.MultiForm.Value
 }
 
+func (g *Guard) ShowForm(ctx *context.Context) {
+
+}
+
 func (g *Guard) EditForm(ctx *context.Context) {
 	previous := ctx.FormValue("__previous_")
 

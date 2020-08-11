@@ -13,7 +13,6 @@ type Generators map[string]Generator
 
 var services = make(Generators)
 
-
 // 初始化List(map[string]Service)，Service是interface(Name方法)
 func GetServices() List {
 	var (
@@ -57,4 +56,3 @@ func (g List) Add(k string, service Service) {
 	}
 	g[k] = service
 }
-

@@ -69,6 +69,206 @@ const (
 	LayoutTab
 )
 
+func (l Layout) Default() bool {
+	return l == LayoutDefault
+}
+
+func (l Layout) Flow() bool {
+	return l == LayoutFlow
+}
+
+func (t Type) Name() string {
+	switch t {
+	case Default:
+		return "Default"
+	case Text:
+		return "Text"
+	case SelectSingle:
+		return "SelectSingle"
+	case Select:
+		return "Select"
+	case IconPicker:
+		return "IconPicker"
+	case SelectBox:
+		return "SelectBox"
+	case File:
+		return "File"
+	case Table:
+		return "Table"
+	case Multifile:
+		return "Multifile"
+	case Password:
+		return "Password"
+	case RichText:
+		return "RichText"
+	case Rate:
+		return "Rate"
+	case Checkbox:
+		return "Checkbox"
+	case CheckboxStacked:
+		return "CheckboxStacked"
+	case CheckboxSingle:
+		return "CheckboxSingle"
+	case Date:
+		return "Date"
+	case DateRange:
+		return "DateRange"
+	case Datetime:
+		return "Datetime"
+	case DatetimeRange:
+		return "DatetimeRange"
+	case Radio:
+		return "Radio"
+	case Slider:
+		return "Slider"
+	case Array:
+		return "Array"
+	case Email:
+		return "Email"
+	case Url:
+		return "Url"
+	case Ip:
+		return "Ip"
+	case Color:
+		return "Color"
+	case Currency:
+		return "Currency"
+	case Number:
+		return "Number"
+	case NumberRange:
+		return "NumberRange"
+	case TextArea:
+		return "TextArea"
+	case Custom:
+		return "Custom"
+	case Switch:
+		return "Switch"
+	case Code:
+		return "Code"
+	default:
+		panic("wrong form type")
+	}
+}
+
+func (t Type) String() string {
+	switch t {
+	case Default:
+		return "default"
+	case Text:
+		return "text"
+	case SelectSingle:
+		return "select_single"
+	case Select:
+		return "select"
+	case IconPicker:
+		return "iconpicker"
+	case SelectBox:
+		return "selectbox"
+	case File:
+		return "file"
+	case Table:
+		return "table"
+	case Multifile:
+		return "multi_file"
+	case Password:
+		return "password"
+	case RichText:
+		return "richtext"
+	case Rate:
+		return "rate"
+	case Checkbox:
+		return "checkbox"
+	case CheckboxStacked:
+		return "checkbox_stacked"
+	case CheckboxSingle:
+		return "checkbox_single"
+	case Date:
+		return "datetime"
+	case DateRange:
+		return "datetime_range"
+	case Datetime:
+		return "datetime"
+	case DatetimeRange:
+		return "datetime_range"
+	case Radio:
+		return "radio"
+	case Slider:
+		return "slider"
+	case Array:
+		return "array"
+	case Email:
+		return "email"
+	case Url:
+		return "url"
+	case Ip:
+		return "ip"
+	case Color:
+		return "color"
+	case Currency:
+		return "currency"
+	case Number:
+		return "number"
+	case NumberRange:
+		return "number_range"
+	case TextArea:
+		return "textarea"
+	case Custom:
+		return "custom"
+	case Switch:
+		return "switch"
+	case Code:
+		return "code"
+	default:
+		panic("wrong form type")
+	}
+}
+
+func (l Layout) String() string {
+	switch l {
+	case LayoutDefault:
+		return "LayoutDefault"
+	case LayoutTwoCol:
+		return "LayoutTwoCol"
+	case LayoutThreeCol:
+		return "LayoutThreeCol"
+	case LayoutFourCol:
+		return "LayoutFourCol"
+	case LayoutFiveCol:
+		return "LayoutFiveCol"
+	case LayoutSixCol:
+		return "LayoutSixCol"
+	case LayoutFlow:
+		return "LayoutFlow"
+	case LayoutTab:
+		return "LayoutTab"
+	default:
+		return "LayoutDefault"
+	}
+}
+
+func GetLayoutFromString(s string) Layout {
+	switch s {
+	case "LayoutDefault":
+		return LayoutDefault
+	case "LayoutTwoCol":
+		return LayoutTwoCol
+	case "LayoutThreeCol":
+		return LayoutThreeCol
+	case "LayoutFourCol":
+		return LayoutFourCol
+	case "LayoutFiveCol":
+		return LayoutFiveCol
+	case "LayoutSixCol":
+		return LayoutSixCol
+	case "LayoutFlow":
+		return LayoutFlow
+	case "LayoutTab":
+		return LayoutTab
+	default:
+		return LayoutDefault
+	}
+}
+
 // 取得日期時間選項
 func getDateTimeRangeOptions(f Type) (map[string]interface{}, map[string]interface{}) {
 	format := "YYYY-MM-DD HH:mm:ss"

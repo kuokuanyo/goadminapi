@@ -67,7 +67,6 @@ type Config struct {
 	// File upload engine,default "local"
 	FileUploadEngine FileUploadEngine `json:"file_upload_engine,omitempty" yaml:"file_upload_engine,omitempty" ini:"file_upload_engine,omitempty"`
 
-
 	// Session valid time duration,units are seconds. Default 7200.
 	SessionLifeTime int `json:"session_life_time,omitempty" yaml:"session_life_time,omitempty" ini:"session_life_time,omitempty"`
 
@@ -177,7 +176,6 @@ func Set(cfg Config) *Config {
 		declare.Do(func() {
 			fmt.Println(`GoAdmin is now running.
 Running in "debug" mode. Switch to "release" mode in production.`)
-			fmt.Println("----------------------------")
 		})
 	}
 
@@ -470,7 +468,6 @@ func GetDomain() string {
 func GetTheme() string {
 	return globalCfg.Theme
 }
-
 
 // 將Config.Databases[key].Driver設置至Config.Databases[key]後回傳(迴圈)
 func (c *Config) EraseSens() *Config {

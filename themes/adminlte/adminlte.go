@@ -6,8 +6,8 @@ import (
 
 	"goadminapi/template/components"
 	"goadminapi/template/types"
+	"goadminapi/themes/adminlte/resource"
 	"goadminapi/themes/common"
-	"goadminapi/themes/resource"
 
 	"github.com/gobuffalo/packr/v2"
 )
@@ -44,4 +44,8 @@ func (t *Theme) GetAsset(path string) ([]byte, error) {
 	path = strings.Replace(path, "/assets/dist", "", -1)
 	box := packr.New("adminlte", "./resource/assets/dist")
 	return box.Find(path)
+}
+
+func (t *Theme) GetAssetList() []string {
+	return resource.AssetsList
 }

@@ -30,6 +30,11 @@ func (e NewFormParam) Value() form.Values {
 	return e.MultiForm.Value
 }
 
+
+func (g *Guard) ShowNewForm(ctx *context.Context) {
+
+}
+
 func (g *Guard) NewForm(ctx *context.Context) {
 	previous := ctx.FormValue("__previous_")
 

@@ -4,6 +4,7 @@ import (
 	"goadminapi/modules/config"
 	"goadminapi/modules/db"
 	"goadminapi/modules/service"
+	"goadminapi/modules/ui"
 	"goadminapi/plugins"
 	"goadminapi/plugins/admin"
 	"goadminapi/plugins/admin/models"
@@ -14,6 +15,7 @@ import (
 
 var defaultAdapter adapter.WebFrameWork
 var engine *Engine
+var navButtons = new(types.Buttons)
 
 // 核心組件，有PluginList及Adapter兩個屬性
 type Engine struct {
@@ -35,10 +37,8 @@ func Register(ada adapter.WebFrameWork) {
 // 回傳預設的Engine(struct)
 func Default() *Engine {
 	engine = &Engine{
-		//空的adapter.WebFrameWork(interface)
-		Adapter:  defaultAdapter,
-		Services: service.GetServices(),
-		// 預設的Buttons(interface)
+		Adapter:    defaultAdapter,
+		Services:   service.GetServices(),
 		NavButtons: new(types.Buttons),
 	}
 	return engine
@@ -164,12 +164,10 @@ func (eng *Engine) Use(router interface{}) error {
 	// 			language.GetWithScope("tool", "tool")))
 	// }
 
-	//navButtons = eng.NavButtons
+	navButtons = eng.NavButtons
 
-	// ui.ServiceKey = ui
 	// 藉由參數新增List(map[string]Service)，新增ui
-	// ui.NewService設置Service
-	// eng.Services.Add(ui.ServiceKey, ui.NewService(eng.NavButtons))
+	eng.Services.Add("ui", ui.NewService(eng.NavButtons))
 	//------------------------------------------------
 
 	// 取得匹配的eng.Services然後轉換成Connection(interface)類別

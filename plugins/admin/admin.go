@@ -58,7 +58,7 @@ func (admin *Admin) InitPlugin(services service.List) {
 	//------------------------------------------------
 
 	// 將參數admin.Services, admin.Conn, admin.tableList設置Admin.guardian(struct)後回傳
-	admin.guardian = guard.New(admin.Services, admin.Conn, admin.tableList)
+	admin.guardian = guard.New(admin.Services, admin.Conn, admin.tableList, admin.UI.NavButtons)
 
 	// 將參數設置至Config(struct)
 	handlerCfg := controller.Config{
@@ -79,7 +79,7 @@ func (admin *Admin) InitPlugin(services service.List) {
 	admin.handler.SetRoutes(admin.App.Routers)
 
 	//------------------------------------------------
-	// admin.handler.AddNavButton(admin.UI.NavButtons)
+	admin.handler.AddNavButton(admin.UI.NavButtons)
 
 	// 將參數(services)設置給services(map[string]Service)，services是套件中的全域變數
 	table.SetServices(services)

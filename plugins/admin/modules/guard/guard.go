@@ -25,12 +25,12 @@ func (g *Guard) table(ctx *context.Context) (table.Table, string) {
 }
 
 // 將參數s、c、t設置至Guard(struct)後回傳
-func New(s service.List, c db.Connection, t table.GeneratorList) *Guard {
+func New(s service.List, c db.Connection, t table.GeneratorList, b *types.Buttons) *Guard {
 	return &Guard{
 		services:  s,
 		conn:      c,
 		tableList: t,
-		// navBtns:   b,
+		navBtns:   b,
 	}
 }
 

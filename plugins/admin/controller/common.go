@@ -44,7 +44,7 @@ func New(cfg ...Config) *Handler {
 	if len(cfg) == 0 {
 		return &Handler{
 			operations: make([]context.Node, 0),
-			// navButtons: new(types.Buttons),
+			navButtons: new(types.Buttons),
 		}
 	}
 	return &Handler{
@@ -53,14 +53,13 @@ func New(cfg ...Config) *Handler {
 		conn:       cfg[0].Connection,
 		generators: cfg[0].Generators,
 		operations: make([]context.Node, 0),
-		// navButtons: new(types.Buttons),
+		navButtons: new(types.Buttons),
 	}
 }
 
 // 將參數設置至ExecuteParam(struct)，接著將給定的數據寫入buf(struct)並回傳
 func (h *Handler) Execute(ctx *context.Context, user models.UserModel, panel types.Panel, animation ...bool) *bytes.Buffer {
 	tmpl, tmplName := aTemplate().GetTemplate(isPjax(ctx))
-
 	return template.Execute(template.ExecuteParam{
 		User:      user,
 		TmplName:  tmplName,
@@ -72,6 +71,13 @@ func (h *Handler) Execute(ctx *context.Context, user models.UserModel, panel typ
 		Buttons:   (*h.navButtons).CheckPermission(user),
 		Iframe:    ctx.Query("__iframe") == "true",
 	})
+}
+
+func (h *Handler) AddNavButton(btns *types.Buttons) {
+	h.navButtons = btns
+	for _, btn := range *btns {
+		h.AddOperation(btn.GetAction().GetCallbacks())
+	}
 }
 
 // 藉由參數取得Router(struct)

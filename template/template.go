@@ -154,7 +154,7 @@ type Template interface {
 
 	// Builder methods
 	// GetTmplList() map[string]string
-	// GetAssetList() []string
+	GetAssetList() []string
 	GetAssetImportHTML(exceptComponents ...string) template.HTML
 	GetAsset(string) ([]byte, error)
 	GetTemplate(bool) (*template.Template, string)
@@ -175,6 +175,16 @@ type Component interface {
 	GetContent() template.HTML
 	IsAPage() bool
 	GetName() string
+}
+
+func Themes() []string {
+	names := make([]string, len(templateMap))
+	i := 0
+	for k := range templateMap {
+		names[i] = k
+		i++
+	}
+	return names
 }
 
 // 取得預設的Template(interface)

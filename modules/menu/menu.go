@@ -30,6 +30,7 @@ func GetGlobalMenu(user models.UserModel, conn db.Connection) *Menu {
 		menus      []map[string]interface{}
 		menuOption = make([]map[string]string, 0)
 	)
+
 	// 查詢角色、權限
 	user.WithRoles().WithMenus()
 	if user.IsSuperAdmin() {
@@ -59,7 +60,6 @@ func GetGlobalMenu(user models.UserModel, conn db.Connection) *Menu {
 
 	// 將參數menus轉換[]Item(Item是資料表menu的欄位)
 	menuList := constructMenuTree(menus, 0)
-
 	return &Menu{
 		List:     menuList,   // 所有菜單資訊([]Item)，Item為資料表menu的欄位
 		Options:  menuOption, // 設置每個菜單的id、title

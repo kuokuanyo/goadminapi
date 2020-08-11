@@ -69,63 +69,27 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
 
             {{.NavButtonsHTML}}
 
-            <li title="{{lang "Fixed the sidebar"}}">
+            <li title="{{"固定側邊欄"}}">
                 <a href="javascript:void(0);" class="fixed-btn" data-click="false">
                     <i class="fa fa-thumb-tack"></i>
                 </a>
             </li>
 
-            <li title="{{lang "Enter fullscreen"}}" class="fullpage-btn">
+            <li title="{{"全螢幕"}}" class="fullpage-btn">
                 <a href="javascript:void(0);">
                     <i class="fa fa-arrows-alt"></i>
                 </a>
             </li>
-            <li title="{{lang "Exit fullscreen"}}" class="exit-fullpage-btn" style="display: none;">
+            <li title="{{"退出全屏"}}" class="exit-fullpage-btn" style="display: none;">
                 <a href="javascript:void(0);">
                     <i class="fa fa-compress"></i>
                 </a>
             </li>
-            <li title="{{lang "Refresh"}}">
+            <li title="{{"刷新"}}">
                 <a href="javascript:void(0);" class="container-refresh">
                     <i class="fa fa-refresh"></i>
                 </a>
             </li>
-            {{if not .User.HideUserCenterEntrance}}
-                <li class="dropdown user user-menu">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                        {{if eq .User.Avatar ""}}
-                            <img src="{{.UrlPrefix}}/assets/dist/img/avatar04.png" class="user-image" alt="User Image">
-                        {{else}}
-                            <img src="{{.User.Avatar}}" class="user-image" alt="User Image">
-                        {{end}}
-                        <span class="hidden-xs">{{.User.Name}}</span>
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li class="user-header">
-                            {{if eq .User.Avatar ""}}
-                                <img src="{{.UrlPrefix}}/assets/dist/img/avatar04.png" class="img-circle"
-                                     alt="User Image">
-                            {{else}}
-                                <img src="{{.User.Avatar}}" class="img-circle" alt="User Image">
-                            {{end}}
-                            <p>
-                                {{.User.Name}} -{{.User.LevelName}}
-                                <small>{{.User.CreatedAt}}</small>
-                            </p>
-                        </li>
-                        <li class="user-footer">
-                            <div class="pull-left">
-                                <a href="{{.UrlPrefix}}/info/normal_manager/edit?__goadmin_edit_pk={{.User.Id}}"
-                                   class="btn btn-default btn-flat">{{lang "setting"}}</a>
-                            </div>
-                            <div class="pull-right">
-                                <a href="{{.UrlPrefix}}/logout"
-                                   class="no-pjax btn btn-default btn-flat">{{lang "sign out"}}</a>
-                            </div>
-                        </li>
-                    </ul>
-                </li>
-            {{end}}
         </ul>
     </div>
 {{end}}`, "components/alert": `{{define "alert"}}
@@ -472,11 +436,11 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
         {{if eq .Value ""}}
             <input style="width: 140px" type="text" name="{{.Field}}" value="fa-bars"
                    class="form-control {{.Field}}"
-                   placeholder="{{lang "Input Icon"}}">
+                   placeholder="{{"Input Icon"}}">
         {{else}}
             <input style="width: 140px" type="text" name="{{.Field}}" value="{{.Value}}"
                    class="form-control {{.Field}}"
-                   placeholder="{{lang "Input Icon"}}">
+                   placeholder="{{"Input Icon"}}">
         {{end}}
     </div>
     <script>
@@ -744,7 +708,7 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
           <td class="form-group">
               <div>
                     <div class="{{$.Field}}-remove btn btn-warning btn-sm pull-right">
-                        <i class="fa fa-trash">&nbsp;</i>{{lang "remove"}}
+                        <i class="fa fa-trash">&nbsp;</i>{{"移除"}}
                     </div>
               </div>
           </td>
@@ -758,7 +722,7 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
         {{end}}
         <td>
             <div class="{{.Field}}-add btn btn-success btn-sm pull-right">
-            <i class="fa fa-save"></i>&nbsp;{{lang "new"}}
+            <i class="fa fa-save"></i>&nbsp;{{"創建"}}
             </div>
         </td>
     </tr>
@@ -779,7 +743,7 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
         <td class="form-group">
         <div>
             <div class="{{.Field}}-remove btn btn-warning btn-sm pull-right">
-            <i class="fa fa-trash">&nbsp;</i>{{lang "remove"}}
+            <i class="fa fa-trash">&nbsp;</i>{{"移除"}}
             </div>
         </div>
         </td>
@@ -810,19 +774,19 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
                         <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"
                                 style="min-width: 32px;" aria-expanded="false">
                             {{if eq .Value2 ""}}
-                            <span class="{{.Field}}-label"> {{lang ">"}} </span>
+                            <span class="{{.Field}}-label"> {{">"}} </span>
                         {{else}}
                             <span class="{{.Field}}-label"> {{.Value2}} </span>
                         {{end}}&nbsp;&nbsp;
                             <span class="fa fa-caret-down"></span>
                         </button>
                         <ul class="dropdown-menu {{.Field}}_ul">
-                            <li><a href="#" data-index="gr"> {{lang ">"}} </a></li>
-                            <li><a href="#" data-index="le"> {{lang "<"}} </a></li>
-                            <li><a href="#" data-index="gq"> {{lang ">="}} </a></li>
-                            <li><a href="#" data-index="lq"> {{lang "<="}} </a></li>
-                            <li><a href="#" data-index="eq"> {{lang "="}} </a></li>
-                            <li><a href="#" data-index="ne"> {{lang "!="}} </a></li>
+                            <li><a href="#" data-index="gr"> {{">"}} </a></li>
+                            <li><a href="#" data-index="le"> {{"<"}} </a></li>
+                            <li><a href="#" data-index="gq"> {{">="}} </a></li>
+                            <li><a href="#" data-index="lq"> {{"<="}} </a></li>
+                            <li><a href="#" data-index="eq"> {{"="}} </a></li>
+                            <li><a href="#" data-index="ne"> {{"!="}} </a></li>
                         </ul>
                     </div>
                 {{else}}
@@ -1377,7 +1341,7 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
             </div>
             {{if not .HideFooter}}
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">{{lang "Close"}}</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">{{"Close"}}</button>
                     {{if .Footer}}
                     <button type="button" class="btn btn-primary">{{ .Footer}}</button>
                     {{end}}
@@ -2013,10 +1977,10 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
 {{end}}`, "components/tree-header": `{{define "tree-header"}}
 <div class="btn-group">
     <a class="btn btn-primary btn-sm tree-model-tree-tools" data-action="expand">
-        <i class="fa fa-plus-square-o"></i>&nbsp;{{lang "expand"}}
+        <i class="fa fa-plus-square-o"></i>&nbsp;{{"展開"}}
     </a>
     <a class="btn btn-primary btn-sm tree-model-tree-tools" data-action="collapse">
-        <i class="fa fa-minus-square-o"></i>&nbsp;{{lang "collapse"}}
+        <i class="fa fa-minus-square-o"></i>&nbsp;{{"摺疊"}}
     </a>
 </div>
 
@@ -2137,13 +2101,13 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
             $('.tree_branch_delete').click(function () {
                 let id = $(this).data('id');
                 swal({
-                        title: {{lang "are you sure to delete"}} +"?",
+                        title: {{"確定要刪除嗎?"}} +"?",
                         type: "warning",
                         showCancelButton: true,
                         confirmButtonColor: "#DD6B55",
-                        confirmButtonText: {{lang "confirm"}},
+                        confirmButtonText: {{"確定"}},
                         closeOnConfirm: false,
-                        cancelButtonText: {{lang "cancel"}}
+                        cancelButtonText: {{"取消"}}
                     },
                     function () {
                         $.ajax({
@@ -2162,7 +2126,7 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
                                 if (data.responseText !== "") {
                                     swal(data.responseJSON.msg, '', 'error');
                                 } else {
-                                    swal("{{lang "error"}}", '', 'error');
+                                    swal("{{"錯誤"}}", '', 'error');
                                 }
                             },
                         });
@@ -2240,8 +2204,7 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
                 <small>{{ .Panel.Description}}</small>
             </h1>
             <ol class="breadcrumb" style="margin-right: 30px;">
-                <li><a href="{{.IndexUrl}}"><i class="fa fa-dashboard"></i> {{lang "home"}}</a></li>
-                {{.Menu.FormatPath}}
+                <li><a href="{{.IndexUrl}}"><i class="fa fa-dashboard"></i> {{"首頁"}}</a></li>
             </ol>
         </section>
     {{end}}
@@ -2286,7 +2249,7 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
         </ul>
         <div class="tab-content">
             <div class="tab-pane active" id="control-sidebar-setting-tab">
-                <h4 class="control-sidebar-heading">{{lang "layout"}}</h4>
+                <h4 class="control-sidebar-heading">{{"layout"}}</h4>
                 <div class="form-group"><label class="control-sidebar-subheading"><input type="checkbox"
                                                                                          data-layout="fixed"
                                                                                          class="pull-right"
@@ -2328,7 +2291,7 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
                                                                                          class="pull-right">
                         切换右侧操作栏背景</label>
                     <p>将右侧操作栏背景亮色或深色切换</p></div>
-                <h4 class="control-sidebar-heading">{{lang "skin"}}</h4>
+                <h4 class="control-sidebar-heading">{{"skin"}}</h4>
                 <ul class="list-unstyled clearfix skin-list">
                     <li><a href="javascript:;" data-skin="skin-blue" style="" class="clearfix full-opacity-hover">
                             <div>
@@ -2465,23 +2428,15 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
                 </ul>
             </div>
             <div class="tab-pane" id="control-sidebar-home-tab">
-                <h4 class="control-sidebar-heading">{{lang "home"}}</h4>
+                <h4 class="control-sidebar-heading">{{"首頁"}}</h4>
             </div>
             <div class="tab-pane" id="control-sidebar-settings-tab">
-                <h4 class="control-sidebar-heading">{{lang "config"}}</h4>
+                <h4 class="control-sidebar-heading">{{"配置"}}</h4>
             </div>
         </div>
     </aside>
 {{end}}`, "footer": `{{define "footer"}}
     <footer class="main-footer">
-        <div class="pull-right hidden-xs">
-            <b>Version</b> {{.System.Version}}
-        </div>
-        <div class="pull-right hidden-xs">
-            <b>Theme</b> {{.System.Theme}}&nbsp;&nbsp;
-        </div>
-        <strong>Powered by <a href="https://github.com/GoAdminGroup/go-admin">GoAdmin</a>.</strong>
-        {{.FooterInfo}}
     </footer>
 {{end}}`, "head": `{{define "head"}}
     <head>
@@ -2662,21 +2617,6 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
 {{end}}`, "sidebar": `{{define "sidebar"}}
     <aside class="main-sidebar">
         <section class="sidebar">
-            {{if not .User.HideUserCenterEntrance}}
-                <div class="user-panel">
-                    <div class="pull-left image">
-                        {{if eq .User.Avatar ""}}
-                            <img src="{{.UrlPrefix}}/assets/dist/img/avatar04.png" class="img-circle" alt="User Image">
-                        {{else}}
-                            <img src="{{.User.Avatar}}" class="img-circle" alt="User Image">
-                        {{end}}
-                    </div>
-                    <div class="pull-left info">
-                        {{.User.Name}}
-                        <a href="#"><i class="fa fa-circle text-success"></i> {{lang "online"}}</a>
-                    </div>
-                </div>
-            {{end}}
             <!-- search form -->
             <!-- <form action="#" method="get" class="sidebar-form">
                 <div class="input-group">

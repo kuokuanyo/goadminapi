@@ -9,6 +9,9 @@ import (
 	"net/http"
 )
 
+func (h *Handler) ShowNewForm(ctx *context.Context) {
+
+}
 func (h *Handler) NewForm(ctx *context.Context) {
 	param := guard.GetNewFormParam(ctx)
 

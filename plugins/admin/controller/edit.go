@@ -10,6 +10,10 @@ import (
 	"net/http"
 )
 
+func (h *Handler) ShowForm(ctx *context.Context) {
+
+}
+
 // EditForm 更新資料
 func (h *Handler) EditForm(ctx *context.Context) {
 	param := guard.GetEditFormParam(ctx)
