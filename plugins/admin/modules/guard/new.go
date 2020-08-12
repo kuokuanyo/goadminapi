@@ -11,6 +11,12 @@ import (
 	"strings"
 )
 
+type ShowNewFormParam struct {
+	Panel  table.Table
+	Prefix string
+	Param  parameter.Parameters
+}
+
 type NewFormParam struct {
 	Panel        table.Table
 	Id           string
@@ -32,7 +38,40 @@ func (e NewFormParam) Value() form.Values {
 
 
 func (g *Guard) ShowNewForm(ctx *context.Context) {
+	// panel, prefix := g.table(ctx)
+	panel, prefix := g.table(ctx)
 
+	if !panel.GetCanAdd() {
+		alert(ctx, panel, "operation not allow", g.conn, g.navBtns)
+		ctx.Abort()
+		return
+	}
+
+	if panel.GetOnlyInfo() {
+		ctx.Redirect(config.Url("/info/" + prefix))
+		ctx.Abort()
+		return
+	}
+
+	if panel.GetOnlyDetail() {
+		ctx.Redirect(config.Url("/info/" + prefix + "/detail"))
+		ctx.Abort()
+		return
+	}
+
+	if panel.GetOnlyUpdateForm() {
+		ctx.Redirect(config.Url("/info/" + prefix + "/edit"))
+		ctx.Abort()
+		return
+	}
+
+	ctx.SetUserValue("show_new_form_param", &ShowNewFormParam{
+		Panel:  panel,
+		Prefix: prefix,
+		Param: parameter.GetParam(ctx.Request.URL, panel.GetInfo().DefaultPageSize, panel.GetInfo().SortField,
+			panel.GetInfo().GetSort()),
+	})
+	ctx.Next()
 }
 
 func (g *Guard) NewForm(ctx *context.Context) {
@@ -44,7 +83,7 @@ func (g *Guard) NewForm(ctx *context.Context) {
 	// 取得匹配的service.Service然後轉換成Connection(interface)
 	// conn := db.GetConnection(g.services)
 
-	// token := ctx.FormValue("__token")
+	// token := ctx.FormValue("__token_")
 	// if !auth.GetTokenService(g.services.Get("token_csrf_helper")).CheckToken(token) {
 	// 	alert(ctx, panel, "wrong token", conn, g.navBtns)
 	// 	ctx.Abort()
@@ -84,4 +123,8 @@ func (g *Guard) NewForm(ctx *context.Context) {
 
 func GetNewFormParam(ctx *context.Context) *NewFormParam {
 	return ctx.UserValue["new_form_param"].(*NewFormParam)
+}
+
+func GetShowNewFormParam(ctx *context.Context) *ShowNewFormParam {
+	return ctx.UserValue["show_new_form_param"].(*ShowNewFormParam)
 }

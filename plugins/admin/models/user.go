@@ -265,6 +265,14 @@ func (t UserModel) WithTx(tx *sql.Tx) UserModel {
 	return t
 }
 
+func (t UserModel) IsVisitor() bool {
+	return !t.CheckPermissionByUrlMethod(config.Url("/info/manager"), "GET", url.Values{})
+}
+
+func (t UserModel) HideUserCenterEntrance() bool {
+	return t.IsVisitor() && config.GetHideVisitorUserCenterEntrance()
+}
+
 // 取得參數
 func getParam(u string) (string, url.Values) {
 	m := make(url.Values)

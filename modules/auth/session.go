@@ -259,3 +259,9 @@ func (ses *Session) Add(key string, value interface{}) error {
 	ses.Context.SetCookie(&cookie)
 	return nil
 }
+
+// 清除cookie(session)
+func (ses *Session) Clear() error {
+	ses.Values = map[string]interface{}{}
+	return ses.Driver.Update(ses.Sid, ses.Values)
+}

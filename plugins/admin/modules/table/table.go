@@ -66,7 +66,7 @@ type Table interface {
 	// GetDetailFromInfo() *types.InfoPanel
 	GetForm() *types.FormPanel
 
-	// GetCanAdd() bool
+	GetCanAdd() bool
 	GetEditable() bool
 	GetDeletable() bool
 	// GetExportable() bool
@@ -75,14 +75,14 @@ type Table interface {
 
 	GetData(params parameter.Parameters) (PanelInfo, error)
 	GetDataWithIds(params parameter.Parameters) (PanelInfo, error)
-	// GetDataWithId(params parameter.Parameters) (FormInfo, error)
+	GetDataWithId(params parameter.Parameters) (FormInfo, error)
 	UpdateData(dataList form.Values) error
 	InsertData(dataList form.Values) error
 	DeleteData(pk string) error
 
-	// GetNewForm() FormInfo
+	GetNewForm() FormInfo
 
-	// GetOnlyInfo() bool
+	GetOnlyInfo() bool
 	GetOnlyDetail() bool
 	GetOnlyNewForm() bool
 	GetOnlyUpdateForm() bool
@@ -148,20 +148,28 @@ func (base *BaseTable) GetDetail() *types.InfoPanel {
 	return base.Detail.SetPrimaryKey(base.PrimaryKey.Name, base.PrimaryKey.Type)
 }
 
-// 回傳BaseTable.Editable(是否可以編輯)
+// 是否有編輯功能
 func (base *BaseTable) GetEditable() bool { return base.Editable }
 
-// 回傳BaseTable.Deletable(是否可以刪除)
+// 是否有刪除功能
 func (base *BaseTable) GetDeletable() bool { return base.Deletable }
 
-// 回傳是否只有更新表單功能
+// 是否只有更新表單功能
 func (base *BaseTable) GetOnlyUpdateForm() bool { return base.OnlyUpdateForm }
 
-// 回傳是否只有新增表單功能
+// 是否只有新增表單功能
 func (base *BaseTable) GetOnlyNewForm() bool { return base.OnlyNewForm }
 
-// 回傳是否只有取得細節的權限
+// 是否只有取得細節的權限
 func (base *BaseTable) GetOnlyDetail() bool { return base.OnlyDetail }
+
+// 是否有新增資料功能
+func (base *BaseTable) GetCanAdd() bool {
+	return base.CanAdd
+}
+
+// 是否只有查看資料功能
+func (base *BaseTable) GetOnlyInfo() bool { return base.OnlyInfo } 
 
 // ------------------------table(interface)的方法---------------------
 

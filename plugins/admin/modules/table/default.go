@@ -2,6 +2,7 @@ package table
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"goadminapi/modules/db/dialect"
 	"goadminapi/plugins/admin/modules"
@@ -80,6 +81,18 @@ func NewDefaultTable(cfgs ...Config) Table {
 
 //-----------------------------table(interface)的方法--------------------------------
 
+// GetNewForm 處理並取得表單欄位資訊(設置選項...等)
+func (tb *DefaultTable) GetNewForm() FormInfo {
+	// -------------一般tb.Form.TabGroups=0，執行直接return--------------------
+	if len(tb.Form.TabGroups) == 0 {
+		// FieldsWithDefaultValue 將表單欄位處理後(設置選項...等資訊)加入FormFields([]FormField)中
+		return FormInfo{FieldList: tb.Form.FieldsWithDefaultValue(tb.sql)}
+	}
+
+	newForm, headers := tb.Form.GroupField(tb.sql)
+	return FormInfo{GroupFieldList: newForm, GroupFieldHeaders: headers}
+}
+
 // GetData 透過參數處理後取得前端介面顯示資料，將值設置至PanelInfo(struct)
 // PanelInfo裡的資訊有主題、描述名稱、可以篩選條件的欄位、選擇顯示的欄位、分頁、[]TheadItem(欄位資訊)等資訊
 func (tb *DefaultTable) GetData(params parameter.Parameters) (PanelInfo, error) {
@@ -139,6 +152,152 @@ func (tb *DefaultTable) GetData(params parameter.Parameters) (PanelInfo, error) 
 		Title:          tb.Info.Title,
 		FilterFormData: filterForm,
 		Description:    tb.Info.Description,
+	}, nil
+}
+
+// GetDataWithId 透過id取得資料，並且將選項、預設值...等資訊設置至FormFields
+func (tb *DefaultTable) GetDataWithId(param parameter.Parameters) (FormInfo, error) {
+	var (
+		res     map[string]interface{}
+		columns Columns
+		// PK透過參數__pk尋找Parameters.Fields[__pk]是否存在，如果存在則回傳第一個value值(string)並且用","拆解成[]string，回傳第一個數值
+		id = param.PK()
+	)
+
+	// getDataRes 假設參數list([]map[string]interface{})長度大於零則回傳list[0](map[string]interface{})
+	if tb.getDataFun != nil {
+		res = getDataRes(tb.getDataFun(param))
+	} else if tb.sourceURL != "" {
+		res = getDataRes(tb.getDataFromURL(param))
+	} else if tb.Detail.GetDataFn != nil {
+		res = getDataRes(tb.Detail.GetDataFn(param))
+	} else if tb.Info.GetDataFn != nil {
+		res = getDataRes(tb.Info.GetDataFn(param))
+	} else { // -----------一般執行此條件-----------------
+		// getColumns 取得所有欄位
+		columns, _ = tb.getColumns(tb.Form.Table)
+
+		var (
+			fields, joinFields, joins, groupBy = "", "", "", ""
+
+			err        error
+			joinTables = make([]string, 0)
+			// args為編輯的id
+			args = []interface{}{id}
+			// db透過參數取得匹配的Service(interface)，接著將參數轉換為Connection(interface)回傳並回傳
+			connection = tb.db()
+			delimiter  = connection.GetDelimiter()
+			// GetForm將參數值設置至BaseTable.Form(FormPanel(struct)).primaryKey中後回傳
+			tableName = tb.GetForm().Table
+			// pk = table.'id'
+			pk = tableName + "." + modules.Delimiter(delimiter, tb.PrimaryKey.Name)
+			// 透過id取得資料
+			queryStatement = "select %s from " + modules.Delimiter(delimiter, "%s") + " %s where " + pk + " = ? %s "
+		)
+
+		if connection.Name() == "postgresql" {
+			queryStatement = "select %s from %s %s where " + pk + " = ? %s "
+		}
+
+		// tb.Form.FieldList為表單所有欄位的資訊
+		for _, field := range tb.Form.FieldList {
+			if field.Field != pk && modules.InArray(columns, field.Field) &&
+				// 對joins([]join(struct))執行迴圈，假設Join(struct)的Table、Field、JoinField不為空，回傳true
+				!field.Joins.Valid() {
+				// 將所有欄位名稱加上資料表名(ex:tablename.colname)
+				// ex:menu.`id`,menu.`parent_id`,menu.`title`,...
+				fields += tableName + "." + modules.FilterField(field.Field, delimiter) + ","
+			}
+
+			headField := field.Field
+
+			// -------在編輯頁面時不會執行(沒有join)--------------
+			if field.Joins.Valid() {
+				headField = field.Joins.Last().Table + "_join_" + field.Field
+				joinFields += db.GetAggregationExpression(connection.Name(), field.Joins.Last().Table+"."+
+					modules.FilterField(field.Field, delimiter), headField, types.JoinFieldValueDelimiter) + ","
+				for _, join := range field.Joins {
+					if !modules.InArray(joinTables, join.Table) {
+						joinTables = append(joinTables, join.Table)
+						if join.BaseTable == "" {
+							join.BaseTable = tableName
+						}
+						joins += " left join " + modules.FilterField(join.Table, delimiter) + " on " +
+							join.Table + "." + modules.FilterField(join.JoinField, delimiter) + " = " +
+							join.BaseTable + "." + modules.FilterField(join.Field, delimiter)
+					}
+				}
+			}
+		}
+
+		fields += pk
+		groupFields := fields
+
+		// ------在編輯頁面時不會執行下列判斷(沒有joinFields)-------------
+		if joinFields != "" {
+			fields += "," + joinFields[:len(joinFields)-1]
+			if connection.Name() == "mssql" {
+				for _, field := range tb.Form.FieldList {
+					if field.TypeName == db.Text || field.TypeName == db.Longtext {
+						f := modules.Delimiter(connection.GetDelimiter(), field.Field)
+						headField := tb.Info.Table + "." + f
+						fields = strings.Replace(fields, headField, "CAST("+headField+" AS NVARCHAR(MAX)) as "+f, -1)
+						groupFields = strings.Replace(groupFields, headField, "CAST("+headField+" AS NVARCHAR(MAX))", -1)
+					}
+				}
+			}
+		}
+
+		// ---------------在編輯頁面時不會執行下列判斷(沒有joinTables)-----------------
+		if len(joinTables) > 0 {
+			if connection.Name() == "mssql" {
+				groupBy = " GROUP BY " + groupFields
+			} else {
+				groupBy = " GROUP BY " + pk
+			}
+		}
+
+		queryCmd := fmt.Sprintf(queryStatement, fields, tableName, joins, groupBy)
+
+		// 取得單筆資料(利用id)
+		result, err := connection.QueryWithConnection(tb.connection, queryCmd, args...)
+		if err != nil {
+			return FormInfo{Title: tb.Form.Title, Description: tb.Form.Description}, err
+		}
+
+		if len(result) == 0 {
+			return FormInfo{Title: tb.Form.Title, Description: tb.Form.Description}, errors.New("wrong id")
+		}
+
+		res = result[0]
+	}
+
+	var (
+		// 編輯頁面時，groupFormList、groupHeaders都為空
+		groupFormList = make([]types.FormFields, 0)
+		groupHeaders  = make([]string, 0)
+	)
+
+	// -----------在編輯頁面時不會執行---------------
+	if len(tb.Form.TabGroups) > 0 {
+		groupFormList, groupHeaders = tb.Form.GroupFieldWithValue(tb.PrimaryKey.Name, id, columns, res, tb.sql)
+		return FormInfo{
+			FieldList:         tb.Form.FieldList,
+			GroupFieldList:    groupFormList,
+			GroupFieldHeaders: groupHeaders,
+			Title: tb.Form.Title,
+			Description: tb.Form.Description,
+		}, nil
+	}
+
+	// FieldsWithValue 設置選項、預設值...等資訊至FormFields
+	var fieldList = tb.Form.FieldsWithValue(tb.PrimaryKey.Name, id, columns, res, tb.sql)
+	return FormInfo{
+		FieldList:         fieldList,
+		GroupFieldList:    groupFormList,
+		GroupFieldHeaders: groupHeaders,
+		Title:             tb.Form.Title,
+		Description:       tb.Form.Description,
 	}, nil
 }
 
@@ -935,4 +1094,12 @@ func (tb *DefaultTable) getDataFromURL(params parameter.Parameters) ([]map[strin
 	}
 
 	return data.Data, data.Size
+}
+
+// 假設參數list([]map[string]interface{})長度大於零則回傳list[0](map[string]interface{})
+func getDataRes(list []map[string]interface{}, _ int) map[string]interface{} {
+	if len(list) > 0 {
+		return list[0]
+	}
+	return nil
 }

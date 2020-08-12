@@ -121,3 +121,15 @@ func (s *TokenService) AddToken() string {
 	s.tokens = append(s.tokens, tokenStr)
 	return tokenStr
 }
+
+// DelCookie 清除cookie(session)資料
+func DelCookie(ctx *context.Context, conn db.Connection) error {
+	// 設置Session(struct)資訊並取得cookie及設置cookie值
+	ses, err := InitSession(ctx, conn)
+
+	if err != nil {
+		return err
+	}
+
+	return ses.Clear()
+}

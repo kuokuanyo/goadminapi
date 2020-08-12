@@ -109,6 +109,8 @@ type Config struct {
 
 	Custom500HTML template.HTML `json:"custom_500_html,omitempty" yaml:"custom_500_html,omitempty" ini:"custom_500_html,omitempty"`
 
+	HideVisitorUserCenterEntrance bool `json:"hide_visitor_user_center_entrance,omitempty" yaml:"hide_visitor_user_center_entrance,omitempty" ini:"hide_visitor_user_center_entrance,omitempty"`
+
 	ExcludeThemeComponents []string `json:"exclude_theme_components,omitempty" yaml:"exclude_theme_components,omitempty" ini:"exclude_theme_components,omitempty"`
 }
 
@@ -188,9 +190,9 @@ Running in "debug" mode. Switch to "release" mode in production.`)
 func SetDefault(cfg Config) Config {
 	// SetDefault假設第一個參數 = 第二個參數回傳第三個參數，沒有的話回傳第一個參數
 	cfg.Title = utils.SetDefault(cfg.Title, "", "Orange")
-	cfg.LoginTitle = utils.SetDefault(cfg.LoginTitle, "", "Orange")
-	cfg.Logo = template.HTML(utils.SetDefault(string(cfg.Logo), "", "<b>Go</b>Orange"))
-	cfg.MiniLogo = template.HTML(utils.SetDefault(string(cfg.MiniLogo), "", "<b>O</b>O"))
+	cfg.LoginTitle = utils.SetDefault(cfg.LoginTitle, "", "晶橙")
+	cfg.Logo = template.HTML(utils.SetDefault(string(cfg.Logo), "", "<b>晶</b>橙"))
+	cfg.MiniLogo = template.HTML(utils.SetDefault(string(cfg.MiniLogo), "", "<b>晶</b>橙"))
 	cfg.Theme = utils.SetDefault(cfg.Theme, "", "adminlte")
 	cfg.IndexUrl = utils.SetDefault(cfg.IndexUrl, "", "/info/manager")
 	cfg.LoginUrl = utils.SetDefault(cfg.LoginUrl, "", "/login")
@@ -467,6 +469,10 @@ func GetDomain() string {
 
 func GetTheme() string {
 	return globalCfg.Theme
+}
+
+func GetHideVisitorUserCenterEntrance() bool {
+	return globalCfg.HideVisitorUserCenterEntrance
 }
 
 // 將Config.Databases[key].Driver設置至Config.Databases[key]後回傳(迴圈)

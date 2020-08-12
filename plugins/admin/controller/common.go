@@ -8,7 +8,9 @@ import (
 	"goadminapi/template/icon"
 	"goadminapi/template/types"
 	template2 "html/template"
+	"net/http"
 	"regexp"
+	"strings"
 
 	"goadminapi/context"
 	"goadminapi/modules/db"
@@ -218,9 +220,153 @@ func filterFormFooter(infoUrl string) template2.HTML {
 	return col1 + col2
 }
 
+// formContent 取得表單內容HTML語法
+func formContent(form types.FormAttribute, isTab, iframe, isHideBack bool, header template2.HTML) template2.HTML {
+	if isTab {
+		return form.GetContent()
+	}
+
+	if iframe {
+		header = ""
+	} else { // -------------一般執行此條件------
+		if header == template2.HTML("") {
+			// GetDefaultBoxHeader 判斷條件後取得HTML語法(新建與返回按鈕...等HTML)
+			header = form.GetDefaultBoxHeader(isHideBack)
+		}
+	}
+
+	return aBox().
+		SetHeader(header).
+		WithHeadBorder().
+		SetStyle(" ").
+		SetIframeStyle(iframe).
+		SetBody(form.GetContent()).
+		GetContent()
+}
+
+// formFooter 處理繼續新增、繼續編輯、保存、重製....等HTML語法
+func formFooter(page string, isHideEdit, isHideNew, isHideReset bool) template2.HTML {
+	col1 := aCol().SetSize(types.SizeMD(2)).GetContent()
+
+	var (
+		checkBoxs  template2.HTML
+		checkBoxJS template2.HTML
+
+		// 繼續編輯的按鈕
+		editCheckBox = template.HTML(`
+			<label class="pull-right" style="margin: 5px 10px 0 0;">
+                <input type="checkbox" class="continue_edit" style="position: absolute; opacity: 0;"> ` + "繼續編輯" + `
+			</label>`)
+		// 繼續新增按鈕
+		newCheckBox = template.HTML(`
+			<label class="pull-right" style="margin: 5px 10px 0 0;">
+                <input type="checkbox" class="continue_new" style="position: absolute; opacity: 0;"> ` + "繼續新增" + `
+            </label>`)
+
+		editWithNewCheckBoxJs = template.HTML(`$('.continue_edit').iCheck({checkboxClass: 'icheckbox_minimal-blue'}).on('ifChanged', function (event) {
+		if (this.checked) {
+			$('.continue_new').iCheck('uncheck');
+			$('input[name="` + "__previous_" + `"]').val(location.href)
+		} else {
+			$('input[name="` + "__previous_" + `"]').val(previous_url)
+		}
+	});	`)
+
+		newWithEditCheckBoxJs = template.HTML(`$('.continue_new').iCheck({checkboxClass: 'icheckbox_minimal-blue'}).on('ifChanged', function (event) {
+		if (this.checked) {
+			$('.continue_edit').iCheck('uncheck');
+			$('input[name="` + "__previous_" + `"]').val(location.href.replace('/edit', '/new'))
+		} else {
+			$('input[name="` + "__previous_" + `"]').val(previous_url)
+		}
+	});`)
+	)
+
+	if page == "edit" {
+		// 隱藏新增的按鈕
+		if isHideNew {
+			newCheckBox = ""
+			newWithEditCheckBoxJs = ""
+		}
+		// 隱藏編輯的按鈕
+		if isHideEdit {
+			editCheckBox = ""
+			editWithNewCheckBoxJs = ""
+		}
+		checkBoxs = editCheckBox + newCheckBox
+		checkBoxJS = `<script>	
+	let previous_url = $('input[name="` + "__previous_" + `"]').attr("value")
+	` + editWithNewCheckBoxJs + newWithEditCheckBoxJs + `
+</script>
+`
+	} else if page == "edit_only" && !isHideEdit {
+		checkBoxs = editCheckBox
+		checkBoxJS = template.HTML(`	<script>
+	let previous_url = $('input[name="` + "__previous_" + `"]').attr("value")
+	$('.continue_edit').iCheck({checkboxClass: 'icheckbox_minimal-blue'}).on('ifChanged', function (event) {
+		if (this.checked) {
+			$('input[name="` + "__previous_" + `"]').val(location.href)
+		} else {
+			$('input[name="` + "__previous_" + `"]').val(previous_url)
+		}
+	});
+</script>
+`)
+	} else if page == "new" && !isHideNew {
+		checkBoxs = newCheckBox
+		checkBoxJS = template.HTML(`	<script>
+	let previous_url = $('input[name="` + "__previous_" + `"]').attr("value")
+	$('.continue_new').iCheck({checkboxClass: 'icheckbox_minimal-blue'}).on('ifChanged', function (event) {
+		if (this.checked) {
+			console.log(1)
+			console.log(location.href)
+			$('input[name="` + "__previous_" + `"]').val(location.href)
+		} else {
+			console.log(2)
+			console.log(previous_url_goadmin)
+			$('input[name="` + "__previous_" + `"]').val(previous_url)
+		}
+	});
+</script>
+`)
+	}
+
+	btn1 := aButton().SetType("submit").
+		SetContent("Save").
+		SetThemePrimary().
+		SetOrientationRight().
+		GetContent()
+
+	// btn2為尋找class="btn-group pull-left"
+	btn2 := template.HTML("")
+	if !isHideReset {
+		btn2 = aButton().SetType("reset").
+			SetContent("Reset").
+			SetThemeWarning().
+			SetOrientationLeft().
+			GetContent()
+	}
+
+	col2 := aCol().SetSize(types.SizeMD(8)).
+		SetContent(btn1 + checkBoxs + btn2 + checkBoxJS).GetContent()
+
+	return col1 + col2
+}
+
 // 將參數h.services.Get(auth.TokenServiceKey)轉換成TokenService(struct)類別後回傳
 func (h *Handler) authSrv() *auth.TokenService {
 	return auth.GetTokenService(h.services.Get("token_csrf_helper"))
+}
+
+func (h *Handler) HTML(ctx *context.Context, user models.UserModel, panel types.Panel, animation ...bool) {
+	buf := h.Execute(ctx, user, panel, animation...)
+	ctx.HTML(http.StatusOK, buf.String())
+}
+
+func isInfoUrl(s string) bool {
+	reg, _ := regexp.Compile("(.*?)info/(.*?)$")
+	sub := reg.FindStringSubmatch(s)
+	return len(sub) > 2 && !strings.Contains(sub[2], "/")
 }
 
 // 判斷是否header X-PJAX:true

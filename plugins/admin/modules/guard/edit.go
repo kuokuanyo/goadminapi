@@ -16,8 +16,14 @@ import (
 	"strings"
 
 	tmpl "html/template"
-
 )
+
+type ShowFormParam struct {
+	Panel  table.Table
+	Id     string
+	Prefix string
+	Param  parameter.Parameters
+}
 
 type EditFormParam struct {
 	Panel        table.Table
@@ -39,7 +45,45 @@ func (e EditFormParam) Value() form.Values {
 }
 
 func (g *Guard) ShowForm(ctx *context.Context) {
+	// 取得table(interface)、prefix
+	panel, prefix := g.table(ctx)
 
+	if !panel.GetEditable() {
+		alert(ctx, panel, errors.OperationNotAllow, g.conn, g.navBtns)
+		ctx.Abort()
+		return
+	}
+	if panel.GetOnlyInfo() {
+		ctx.Redirect(config.Url("/info/" + prefix))
+		ctx.Abort()
+		return
+	}
+	if panel.GetOnlyDetail() {
+		ctx.Redirect(config.Url("/info/" + prefix + "/detail"))
+		ctx.Abort()
+		return
+	}
+
+	if panel.GetOnlyNewForm() {
+		ctx.Redirect(config.Url("/info/" + prefix + "/new"))
+		ctx.Abort()
+		return
+	}
+
+	id := ctx.Query("__edit_pk")
+	if id == "" && prefix != "site" {
+		alert(ctx, panel, errors.WrongPK(panel.GetPrimaryKey().Name), g.conn, g.navBtns)
+		ctx.Abort()
+		return
+	}
+	ctx.SetUserValue("show_form_param", &ShowFormParam{
+		Panel:  panel,
+		Id:     id,
+		Prefix: prefix,
+		Param: parameter.GetParam(ctx.Request.URL, panel.GetInfo().DefaultPageSize, panel.GetInfo().SortField,
+			panel.GetInfo().GetSort()).WithPKs(id),
+	})
+	ctx.Next()
 }
 
 func (g *Guard) EditForm(ctx *context.Context) {
@@ -81,13 +125,13 @@ func (g *Guard) EditForm(ctx *context.Context) {
 	values := ctx.Request.MultipartForm.Value
 
 	ctx.SetUserValue("edit_form_param", &EditFormParam{
-		Panel:     panel,
-		Id:        id,
-		Prefix:    prefix,                          // manage or roles or permissions
-		Param:     param.WithPKs(id),               // 將參數(id)結合並設置至Parameters.Fields["__pk"]後回傳
-		Path:      strings.Split(previous, "?")[0], // ex:/admin/info/manager(roles or permissions)
-		MultiForm: multiForm,                       // 在multipart/form-data所設定的參數
-		IsIframe: form.Values(values).Get("__iframe") == "true", // ex:false
+		Panel:        panel,
+		Id:           id,
+		Prefix:       prefix,                                        // manage or roles or permissions
+		Param:        param.WithPKs(id),                             // 將參數(id)結合並設置至Parameters.Fields["__pk"]後回傳
+		Path:         strings.Split(previous, "?")[0],               // ex:/admin/info/manager(roles or permissions)
+		MultiForm:    multiForm,                                     // 在multipart/form-data所設定的參數
+		IsIframe:     form.Values(values).Get("__iframe") == "true", // ex:false
 		IframeID:     form.Values(values).Get("__iframe_id"),
 		PreviousPath: previous, // ex: /admin/info/manager?__page=1&__pageSize=10&__sort=id&__sort_type=desc
 		FromList:     fromList, // ex: true
@@ -98,6 +142,10 @@ func (g *Guard) EditForm(ctx *context.Context) {
 // 回傳Context.UserValue[edit_form_param]的值(struct)
 func GetEditFormParam(ctx *context.Context) *EditFormParam {
 	return ctx.UserValue["edit_form_param"].(*EditFormParam)
+}
+
+func GetShowFormParam(ctx *context.Context) *ShowFormParam {
+	return ctx.UserValue["show_form_param"].(*ShowFormParam)
 }
 
 // 判斷參數是否是info url

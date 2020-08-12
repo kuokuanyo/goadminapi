@@ -29,8 +29,10 @@ func (admin *Admin) initRouter() *Admin {
 
 	route.GET(config.GetLoginUrl(), admin.handler.ShowLogin)
 	route.POST("/signin", admin.handler.Auth)
+	
 
 	authRoute := route.Group("/", auth.Middleware(admin.Conn))
+	authRoute.GET("/logout", admin.handler.Logout)
 	// *************還有前端函式還沒處理getMenuInfoPanel、showNewMenu********************
 	authRoute.POST("/menu/new", admin.guardian.MenuNew, admin.handler.NewMenu).Name("menu_new")
 	authRoute.POST("/menu/delete", admin.guardian.MenuDelete, admin.handler.DeleteMenu).Name("menu_delete")

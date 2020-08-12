@@ -138,7 +138,7 @@ func (compo *FormAttribute) SetTitle(value template.HTML) types.FormAttribute {
 	return compo
 }
 
-// GetDefaultBoxHeader判斷條件(是否隱藏返回按鍵)後取得class="box-title"HTML語法
+// GetDefaultBoxHeader 判斷條件後取得HTML語法(新建與返回按鈕...等HTML)
 func (compo *FormAttribute) GetDefaultBoxHeader(hideBack bool) template.HTML {
 	if hideBack {
 
@@ -151,7 +151,7 @@ func (compo *FormAttribute) GetDefaultBoxHeader(hideBack bool) template.HTML {
                     <a href='%s' class="btn btn-sm btn-default form-history-back"><i
                                 class="fa fa-arrow-left"></i> %s</a>
                 </div>
-            </div>`, compo.Title, compo.HiddenFields["__previous_"], "Back"))
+            </div>`, template.HTML(compo.Title), compo.HiddenFields["__previous_"], "Back"))
 }
 
 // GetDetailBoxHeader(取得細節的BoxHeader)將編輯及刪除按鈕的HTML語法處理後加入class="box-title"的HTML語法中

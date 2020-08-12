@@ -90,6 +90,37 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
                     <i class="fa fa-refresh"></i>
                 </a>
             </li>
+            {{if not .User.HideUserCenterEntrance}}
+                <li class="dropdown user user-menu">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                        {{if eq .User.Avatar ""}}
+                            <img src="{{.UrlPrefix}}/assets/dist/img/avatar04.png" class="user-image" alt="User Image">
+                        {{else}}
+                            <img src="{{.User.Avatar}}" class="user-image" alt="User Image">
+                        {{end}}
+                        <span class="hidden-xs">{{.User.Name}}</span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li class="user-header">
+                            {{if eq .User.Avatar ""}}
+                                <img src="{{.UrlPrefix}}/assets/dist/img/avatar04.png" class="img-circle"
+                                     alt="User Image">
+                            {{else}}
+                                <img src="{{.User.Avatar}}" class="img-circle" alt="User Image">
+                            {{end}}
+                            <p>
+                                {{.User.Name}} -{{.User.LevelName}}
+                            </p>
+                        </li>
+                        <li class="user-footer">
+                            <div class="pull-right">
+                                <a href="{{.UrlPrefix}}/logout"
+                                   class="no-pjax btn btn-default btn-flat">{{"登出"}}</a>
+                            </div>
+                        </li>
+                    </ul>
+                </li>
+            {{end}}
         </ul>
     </div>
 {{end}}`, "components/alert": `{{define "alert"}}

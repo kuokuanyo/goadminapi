@@ -6,6 +6,8 @@ import (
 
 	"goadminapi/context"
 	"goadminapi/modules/auth"
+	"goadminapi/modules/config"
+	"goadminapi/modules/db"
 	"goadminapi/plugins/admin/models"
 	"goadminapi/plugins/admin/modules/response"
 	"goadminapi/template"
@@ -90,4 +92,15 @@ func (h *Handler) ShowLogin(ctx *context.Context) {
 		ctx.HTML(http.StatusOK, "parse template error (；′⌒`)")
 		panic(err)
 	}
+}
+
+// Logout delete the cookie.
+func (h *Handler) Logout(ctx *context.Context) {
+	err := auth.DelCookie(ctx, db.GetConnection(h.services))
+	if err != nil {
+		panic(err)
+	}
+
+	ctx.AddHeader("Location", h.config.Url(config.GetLoginUrl()))
+	ctx.SetStatusCode(302)
 }

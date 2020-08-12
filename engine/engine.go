@@ -135,6 +135,7 @@ func (eng *Engine) Use(router interface{}) error {
 	site := models.Site().SetConn(eng.DefaultConnection())
 	// ToMap將Config的值設置至map[string]string
 	site.Init(eng.config.ToMap())
+	// 更新Config(struct)值(從site資料表資訊更新)
 	_ = eng.config.Update(site.AllToMap())
 
 	// 藉由參數新增List(map[string]Service)，新增config

@@ -239,9 +239,27 @@ func (param Parameters) GetRouteParamStr() string {
 	return "?" + p.Encode()
 }
 
-// 將參數(多個string)結合並設置至Parameters.Fields["__pk"]後回傳
+// PK透過參數__pk尋找Parameters.Fields[__pk]是否存在，如果存在則回傳第一個value值(string)並且用","拆解成[]string，回傳第一個數值
+func (param Parameters) PK() string {
+	return param.PKs()[0]
+}
+
+// 將參數(多個string)結合並設置至Parameters.Fields["__pk"]
 func (param Parameters) WithPKs(id ...string) Parameters {
 	param.Fields["__pk"] = []string{strings.Join(id, ",")}
+	return param
+}
+
+// 刪除Parameters.Fields[參數]
+func (param Parameters) DeleteField(field string) Parameters {
+	delete(param.Fields, field)
+	return param
+}
+
+// DeletePK 刪除Parameters.Fields[__pk]
+func (param Parameters) DeletePK() Parameters {
+	// PrimaryKey = __pk
+	delete(param.Fields, "__pk")
 	return param
 }
 

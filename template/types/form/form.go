@@ -342,6 +342,14 @@ func (t Type) GetDefaultOptions(field string) (map[string]interface{}, map[strin
 	return nil, nil, ""
 }
 
+func (t Type) IsArray() bool {
+	return t == Array
+}
+
+func (t Type) IsTable() bool {
+	return t == Table
+}
+
 // 判斷t(unit8)是否符合條件
 func (t Type) IsSelect() bool {
 	return t == Select || t == SelectSingle || t == SelectBox || t == Radio || t == Switch ||
@@ -398,6 +406,12 @@ func (t Type) FixOptions(m map[string]interface{}) map[string]interface{} {
 	return m
 }
 
+func (t Type) IsFile() bool {
+	// File = 6
+	// Multifile = 7
+	return t == File || t == Multifile
+}
+
 func (t Type) IsMultiFile() bool {
 	return t == Multifile
 }
@@ -405,6 +419,11 @@ func (t Type) IsMultiFile() bool {
 // 是否設置值為範圍
 func (t Type) IsRange() bool {
 	return t == DatetimeRange || t == NumberRange
+}
+
+// 是否為自定義
+func (t Type) IsCustom() bool {
+	return t == Custom
 }
 
 // 判斷條件後設置[]template.HTML

@@ -110,3 +110,69 @@ func (f FieldDisplay) ToDisplay(value FieldModel) interface{} {
 
 	return val
 }
+
+func (f FieldDisplay) ToDisplayStringArray(value FieldModel) []string {
+	// ToDisplay 判斷條件後回傳數值(interface{})
+	v := f.ToDisplay(value)
+
+	if h, ok := v.(template.HTML); ok {
+		return []string{string(h)}
+	} else if s, ok := v.(string); ok {
+		return []string{s}
+	} else if arr, ok := v.([]string); ok && len(arr) > 0 {
+		return arr
+	} else if arr, ok := v.([]template.HTML); ok && len(arr) > 0 {
+		ss := make([]string, len(arr))
+		for k, a := range arr {
+			ss[k] = string(a)
+		}
+		return ss
+	} else if v != nil {
+		return []string{fmt.Sprintf("%v", v)}
+	} else {
+		return []string{}
+	}
+}
+
+// ToDisplayHTML 將值處理後取得HTML
+func (f FieldDisplay) ToDisplayHTML(value FieldModel) template.HTML {
+	// 透過參數執行function取得值，接著判斷條件後回傳數值(interface{})
+	v := f.ToDisplay(value)
+	if h, ok := v.(template.HTML); ok {
+		return h
+	} else if s, ok := v.(string); ok {
+		return template.HTML(s)
+	} else if arr, ok := v.([]string); ok && len(arr) > 0 {
+		return template.HTML(arr[0])
+	} else if arr, ok := v.([]template.HTML); ok && len(arr) > 0 {
+		return arr[0]
+	} else if v != nil {
+		return template.HTML(fmt.Sprintf("%v", v))
+	} else {
+		return ""
+	}
+}
+
+// ToDisplayStringArrayArray 將值處理後取得[][]string
+func (f FieldDisplay) ToDisplayStringArrayArray(value FieldModel) [][]string {
+	v := f.ToDisplay(value)
+	if h, ok := v.(template.HTML); ok {
+		return [][]string{{string(h)}}
+	} else if s, ok := v.(string); ok {
+		return [][]string{{s}}
+	} else if arr, ok := v.([]string); ok && len(arr) > 0 {
+		return [][]string{arr}
+	} else if arr, ok := v.([][]string); ok && len(arr) > 0 {
+		return arr
+	} else if arr, ok := v.([]template.HTML); ok && len(arr) > 0 {
+		ss := make([]string, len(arr))
+		for k, a := range arr {
+			ss[k] = string(a)
+		}
+		return [][]string{ss}
+	} else if v != nil {
+		return [][]string{{fmt.Sprintf("%v", v)}}
+	} else {
+		return [][]string{}
+	}
+}
