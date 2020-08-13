@@ -33,10 +33,12 @@ func (admin *Admin) initRouter() *Admin {
 
 	authRoute := route.Group("/", auth.Middleware(admin.Conn))
 	authRoute.GET("/logout", admin.handler.Logout)
-	// *************還有前端函式還沒處理getMenuInfoPanel、showNewMenu********************
+
+	authRoute.GET("/menu", admin.handler.ShowMenu).Name("menu")
+	authRoute.GET("/menu/new", admin.handler.ShowNewMenu).Name("menu_new_show")
+	authRoute.GET("/menu/edit/show", admin.handler.ShowEditMenu).Name("menu_edit_show")
 	authRoute.POST("/menu/new", admin.guardian.MenuNew, admin.handler.NewMenu).Name("menu_new")
 	authRoute.POST("/menu/delete", admin.guardian.MenuDelete, admin.handler.DeleteMenu).Name("menu_delete")
-	// *************還有前端函式還沒處理showEditMenu、table、getMenuInfoPanel********************
 	authRoute.POST("/menu/edit", admin.guardian.MenuEdit, admin.handler.EditMenu).Name("menu_edit")
 
 	authPrefixRoute := route.Group("/", auth.Middleware(admin.Conn), admin.guardian.CheckPrefix)
@@ -44,10 +46,8 @@ func (admin *Admin) initRouter() *Admin {
 	authPrefixRoute.GET("/info/:__prefix/edit", admin.guardian.ShowForm, admin.handler.ShowForm).Name("show_edit")
 	authPrefixRoute.GET("/info/:__prefix/new", admin.guardian.ShowNewForm, admin.handler.ShowNewForm).Name("show_new")
 	authPrefixRoute.GET("/info/:__prefix/detail", admin.handler.ShowDetail).Name("detail")
-	// *************還有前端函式還沒處理showNewForm、showTable********************
 	authPrefixRoute.POST("/new/:__prefix", admin.guardian.NewForm, admin.handler.NewForm).Name("new")
 	authPrefixRoute.POST("/delete/:__prefix", admin.guardian.Delete, admin.handler.Delete).Name("delete")
-	// *************還有前端函式還沒處理showForm、showNewForm、showTable********************
 	authPrefixRoute.POST("/edit/:__prefix", admin.guardian.EditForm, admin.handler.EditForm).Name("edit")
 
 	admin.App = app

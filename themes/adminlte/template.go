@@ -2016,10 +2016,6 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
 </div>
 
 <div class="btn-group">
-    <a class="btn btn-info btn-sm  tree-model-save"><i class="fa fa-save"></i>&nbsp;{{"儲存"}}</a>
-</div>
-
-<div class="btn-group">
     <a class="btn btn-warning btn-sm tree-model-refresh"><i class="fa fa-refresh"></i>&nbsp;{{"刷新頁面"}}</a>
 </div>
 <div class="btn-group">
@@ -2489,7 +2485,7 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
 {{end}}`, "header": `{{define "header"}}
     <header class="main-header">
         <!-- Logo -->
-        <a href="{{.UrlPrefix}}" class="logo">
+        <a href="{{"/admin/info/manager"}}" class="logo">
             <!-- mini logo for sidebar mini 50x50 pixels -->
             <span class="logo-mini">{{.MiniLogo}}</span>
             <!-- logo for regular state and mobile devices -->

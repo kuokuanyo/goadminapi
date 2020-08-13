@@ -2,6 +2,7 @@ package guard
 
 import (
 	"goadminapi/context"
+	"goadminapi/modules/auth"
 	"goadminapi/modules/config"
 	"goadminapi/modules/db"
 	"goadminapi/modules/errors"
@@ -86,6 +87,7 @@ func (g *Guard) ShowForm(ctx *context.Context) {
 	ctx.Next()
 }
 
+// EditForm 編輯表單(POST功能)
 func (g *Guard) EditForm(ctx *context.Context) {
 	previous := ctx.FormValue("__previous_")
 
@@ -99,21 +101,20 @@ func (g *Guard) EditForm(ctx *context.Context) {
 	}
 
 	// 藉由參數取得multipart/form-data中的__token_值並判斷
-	// token := ctx.FormValue("__token_")
-	// if !auth.GetTokenService(g.services.Get("token_csrf_helper")).CheckToken(token) {
-	// 	alert(ctx, panel, errors.EditFailWrongToken, g.conn, g.navBtns)
-	// 	ctx.Abort()
-	// 	return
-	// }
+	token := ctx.FormValue("__token_")
+	if !auth.GetTokenService(g.services.Get("token_csrf_helper")).CheckToken(token) {
+		alert(ctx, panel, errors.EditFailWrongToken, g.conn, g.navBtns)
+		ctx.Abort()
+		return
+	}
 
 	// GetParamFromURL將頁面size、資料排列方式、選擇欄位...等資訊後設置至Parameters(struct)
 	param := parameter.GetParamFromURL(previous, panel.GetInfo().DefaultPageSize,
 		panel.GetInfo().GetSort(), panel.GetPrimaryKey().Name)
 
-	// 判斷參數是否是info url(true)
+	// 判斷參數是否是info url，如果選擇繼續增加則會是flase
 	fromList := isInfoUrl(previous)
 	if fromList {
-		// GetRouteParamStr取得url.Values後加入__page(鍵)與值，最後編碼並回傳
 		previous = config.Url("/info/" + prefix + param.GetRouteParamStr())
 	}
 
@@ -134,7 +135,7 @@ func (g *Guard) EditForm(ctx *context.Context) {
 		IsIframe:     form.Values(values).Get("__iframe") == "true", // ex:false
 		IframeID:     form.Values(values).Get("__iframe_id"),
 		PreviousPath: previous, // ex: /admin/info/manager?__page=1&__pageSize=10&__sort=id&__sort_type=desc
-		FromList:     fromList, // ex: true
+		FromList:     fromList, // 如果沒有繼續增加則為true，繼續增加則為false
 	})
 	ctx.Next()
 }

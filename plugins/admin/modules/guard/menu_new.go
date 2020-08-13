@@ -2,6 +2,7 @@ package guard
 
 import (
 	"goadminapi/context"
+	"goadminapi/modules/auth"
 	"strconv"
 
 	"html/template"
@@ -21,11 +22,12 @@ type MenuNewParam struct {
 func (g *Guard) MenuNew(ctx *context.Context) {
 	var (
 		alert template.HTML
-		// token = ctx.FormValue("__token_")
+		token = ctx.FormValue("__token_")
 	)
-	// if !auth.GetTokenService(g.services.Get("token_csrf_helper")).CheckToken(token) {
-	// 	alert = getAlert("wrong token")
-	// }
+	if !auth.GetTokenService(g.services.Get("token_csrf_helper")).CheckToken(token) {
+		alert = getAlert("wrong token")
+	}
+	
 	// title與icon值一定要設置(multipart/form-data)
 	if alert == "" {
 		alert = checkEmpty(ctx, "title", "icon")

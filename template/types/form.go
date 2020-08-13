@@ -298,7 +298,7 @@ func (f FormFields) RemoveNotShow() FormFields {
 	return ff
 }
 
-// FieldsWithValue 設置選項、預設值...等資訊至FormFields
+// FieldsWithValue 設置選項、預設值...等資訊至FormFields(帶有預設值)
 func (f *FormPanel) FieldsWithValue(pk, id string, columns []string, res map[string]interface{}, sql func() *db.SQL) FormFields {
 	var (
 		list  = make(FormFields, 0)

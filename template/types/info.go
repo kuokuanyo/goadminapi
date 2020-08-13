@@ -713,6 +713,12 @@ func (i *InfoPanel) AddXssJsFilter() *InfoPanel {
 	return i
 }
 
+// 添加func(param parameter.Parameters) ([]map[string]interface{}, int)至參數i.GetDataFn
+func (i *InfoPanel) SetGetDataFn(fn GetDataFn) *InfoPanel {
+	i.GetDataFn = fn
+	return i
+}
+
 // 判斷資料是升冪或降冪
 func (i *InfoPanel) GetSort() string {
 	switch i.Sort {

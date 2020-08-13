@@ -2,7 +2,9 @@ package guard
 
 import (
 	"goadminapi/context"
+	"goadminapi/modules/auth"
 	"goadminapi/modules/config"
+	"goadminapi/modules/db"
 	"goadminapi/plugins/admin/modules/form"
 	"goadminapi/plugins/admin/modules/parameter"
 	"goadminapi/plugins/admin/modules/table"
@@ -35,7 +37,6 @@ type NewFormParam struct {
 func (e NewFormParam) Value() form.Values {
 	return e.MultiForm.Value
 }
-
 
 func (g *Guard) ShowNewForm(ctx *context.Context) {
 	// panel, prefix := g.table(ctx)
@@ -81,21 +82,21 @@ func (g *Guard) NewForm(ctx *context.Context) {
 	panel, prefix := g.table(ctx)
 
 	// 取得匹配的service.Service然後轉換成Connection(interface)
-	// conn := db.GetConnection(g.services)
+	conn := db.GetConnection(g.services)
 
-	// token := ctx.FormValue("__token_")
-	// if !auth.GetTokenService(g.services.Get("token_csrf_helper")).CheckToken(token) {
-	// 	alert(ctx, panel, "wrong token", conn, g.navBtns)
-	// 	ctx.Abort()
-	// 	return
-	// }
+	token := ctx.FormValue("__token_")
+	if !auth.GetTokenService(g.services.Get("token_csrf_helper")).CheckToken(token) {
+		alert(ctx, panel, "wrong token", conn, g.navBtns)
+		ctx.Abort()
+		return
+	}
 
 	// GetParamFromURL將頁面size、資料排列方式、選擇欄位...等資訊後設置至Parameters(struct)
 	param := parameter.GetParamFromURL(previous, panel.GetInfo().DefaultPageSize,
 		// GetPrimaryKey回傳BaseTable.PrimaryKey
 		panel.GetInfo().GetSort(), panel.GetPrimaryKey().Name)
 
-	// 判斷參數是否是info url(true)
+	// 判斷參數是否是info url，如果選擇繼續增加則會是flase
 	fromList := isInfoUrl(previous)
 	if fromList {
 		// GetRouteParamStr取得url.Values後加入__page(鍵)與值，最後編碼並回傳
@@ -116,7 +117,7 @@ func (g *Guard) NewForm(ctx *context.Context) {
 		Path:         strings.Split(previous, "?")[0],               // ex:/admin/info/manager(roles or permissions)
 		MultiForm:    ctx.Request.MultipartForm,                     // 在multipart/form-data所設定的參數
 		PreviousPath: previous,                                      // ex: /admin/info/manager?__page=1&__pageSize=10&__sort=id&__sort_type=desc
-		FromList:     fromList,
+		FromList:     fromList,                                      // 如果沒有繼續增加則為true，繼續增加則為false
 	})
 	ctx.Next()
 }

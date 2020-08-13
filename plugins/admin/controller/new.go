@@ -11,7 +11,6 @@ import (
 	"goadminapi/template/types"
 	template2 "html/template"
 	"net/http"
-
 )
 
 func (h *Handler) ShowNewForm(ctx *context.Context) {
@@ -20,6 +19,7 @@ func (h *Handler) ShowNewForm(ctx *context.Context) {
 	h.showNewForm(ctx, "", param.Prefix, param.Param.GetRouteParamStr(), false)
 }
 
+// showNewForm 處理前端新增表單介面HTML
 func (h *Handler) showNewForm(ctx *context.Context, alert template2.HTML, prefix, paramStr string, isNew bool) {
 	// 透過參數ctx回傳目前登入的用戶(Context.UserValue["user"])並轉換成UserModel
 	user := auth.Auth(ctx)
@@ -49,18 +49,18 @@ func (h *Handler) showNewForm(ctx *context.Context, alert template2.HTML, prefix
 	// 如果url沒設置__iframe則為空值
 	isNotIframe := ctx.Query("__iframe") != "true"
 
-	// 隱藏資訊(__token_、__go_admin_previous_)
+	// 隱藏資訊(__token_、__previous_)
 	hiddenFields := map[string]string{
 		"__token_":    h.authSrv().AddToken(),
 		"__previous_": infoUrl,
 	}
 
 	// 如果url沒設置則都為空
-	// IframeKey = __goadmin_iframe
+	// IframeKey = __iframe
 	if ctx.Query("__iframe") != "" {
 		hiddenFields["__iframe"] = ctx.Query("__iframe")
 	}
-	// IframeIDKey = __goadmin_iframe_id
+	// IframeIDKey = __iframe_id
 	if ctx.Query("__iframe_id") != "" {
 		hiddenFields["__iframe_id"] = ctx.Query("__iframe_id")
 	}
@@ -77,7 +77,7 @@ func (h *Handler) showNewForm(ctx *context.Context, alert template2.HTML, prefix
 		SetHeadWidth(f.HeadWidth).                 // ex:0
 		SetLayout(f.Layout).                       // ex:LayoutDefault
 		SetPrimaryKey(panel.GetPrimaryKey().Name). // ex:id
-		SetHiddenFields(hiddenFields).           
+		SetHiddenFields(hiddenFields).
 		SetTitle("新建").
 		// formFooter 處理繼續新增、繼續編輯、保存、重製....等HTML語法
 		SetOperationFooter(formFooter("new", f.IsHideContinueEditCheckBox, f.IsHideContinueNewCheckBox,
@@ -96,12 +96,13 @@ func (h *Handler) showNewForm(ctx *context.Context, alert template2.HTML, prefix
 		Title:       modules.AorBHTML(isNotIframe, template2.HTML(f.Title), ""),
 	}, alert == "")
 
-	// 一般不會執行
+	// --------一般不會執行，如果勾選繼續新增則會執行---------------
 	if isNew {
 		ctx.AddHeader("X-PJAX-Url", showNewUrl)
 	}
 }
 
+// NewForm 新增表單資料(POST功能)
 func (h *Handler) NewForm(ctx *context.Context) {
 	param := guard.GetNewFormParam(ctx)
 
@@ -112,8 +113,7 @@ func (h *Handler) NewForm(ctx *context.Context) {
 			if ctx.WantJSON() {
 				response.Error(ctx, err.Error())
 			} else {
-				//**************函式還沒寫***********************
-				// h.showNewForm(ctx, aAlert().Warning(err.Error()), param.Prefix, param.Param.GetRouteParamStr(), true)
+				h.showNewForm(ctx, aAlert().Warning(err.Error()), param.Prefix, param.Param.GetRouteParamStr(), true)
 			}
 			return
 		}
@@ -124,8 +124,7 @@ func (h *Handler) NewForm(ctx *context.Context) {
 		if ctx.WantJSON() {
 			response.Error(ctx, err.Error())
 		} else {
-			//**************函式還沒寫***********************
-			// h.showNewForm(ctx, aAlert().Warning(err.Error()), param.Prefix, param.Param.GetRouteParamStr(), true)
+			h.showNewForm(ctx, aAlert().Warning(err.Error()), param.Prefix, param.Param.GetRouteParamStr(), true)
 		}
 		return
 	}
@@ -142,10 +141,12 @@ func (h *Handler) NewForm(ctx *context.Context) {
 		})
 		return
 	}
+
+	// --------------在介面中選擇繼續新增會執行，執行後直接return---------------
 	if !param.FromList {
 		if isNewUrl(param.PreviousPath, param.Prefix) {
-			//**************函式還沒寫***********************
-			// h.showNewForm(ctx, param.Alert, param.Prefix, param.Param.GetRouteParamStr(), true)
+			// ------繼續新增會執行此條件後return---------------------
+			h.showNewForm(ctx, param.Alert, param.Prefix, param.Param.GetRouteParamStr(), true)
 			return
 		}
 		ctx.HTML(http.StatusOK, fmt.Sprintf(`<script>location.href="%s"</script>`, param.PreviousPath))
@@ -163,10 +164,8 @@ func (h *Handler) NewForm(ctx *context.Context) {
 		return
 	}
 
-	//**************函式還沒寫***********************
-	// buf := h.showTable(ctx, param.Prefix, param.Param, nil)
-	// ctx.HTML(http.StatusOK, buf.String())
-	//**************函式還沒寫***********************
+	buf := h.showTable(ctx, param.Prefix, param.Param, nil)
+	ctx.HTML(http.StatusOK, buf.String())
 
 	// GetRouteParamStr處理url後(?...)的部分(頁面設置、排序方式....等)
 	ctx.AddHeader("X-PJAX-Url", h.routePathWithPrefix("info", param.Prefix)+param.Param.GetRouteParamStr())

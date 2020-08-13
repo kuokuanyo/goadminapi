@@ -130,7 +130,7 @@ type Template interface {
 	// Components
 	// layout
 	Col() types.ColAttribute
-	// Row() types.RowAttribute
+	Row() types.RowAttribute
 
 	// // form and table
 	Form() types.FormAttribute
@@ -138,7 +138,7 @@ type Template interface {
 	DataTable() types.DataTableAttribute
 
 	// TreeView() types.TreeViewAttribute
-	// Tree() types.TreeAttribute
+	Tree() types.TreeAttribute
 	Tabs() types.TabsAttribute
 	Alert() types.AlertAttribute
 	// Link() types.LinkAttribute

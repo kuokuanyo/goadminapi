@@ -20,7 +20,6 @@ var operators = map[string]string{
 	"free": "free",
 }
 
-
 type Parameters struct {
 	Page        string
 	PageInt     int
@@ -153,7 +152,7 @@ func (param Parameters) Statement(wheres, table, delimiter string, whereArgs []i
 	// 處理param.Fields，ex: map[__is_all:[false]]
 	for key, value := range param.Fields {
 		keyIndexSuffix := ""
-		
+
 		keyArr := strings.Split(key, "__index__")
 		// -----一般下面兩個條件式不會執行---------
 		if len(keyArr) > 1 {
@@ -260,6 +259,18 @@ func (param Parameters) DeleteField(field string) Parameters {
 func (param Parameters) DeletePK() Parameters {
 	// PrimaryKey = __pk
 	delete(param.Fields, "__pk")
+	return param
+}
+
+// DeleteEditPk 刪除Parameters.Fields[__edit_pk]後回傳
+func (param Parameters) DeleteEditPk() Parameters {
+	delete(param.Fields, "__edit_pk")
+	return param
+}
+
+// DeleteDetailPk 刪除Parameters.Fields[__detail_pk]
+func (param Parameters) DeleteDetailPk() Parameters {
+	delete(param.Fields, "__detail_pk")
 	return param
 }
 

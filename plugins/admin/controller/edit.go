@@ -16,6 +16,7 @@ import (
 	"net/url"
 )
 
+// ShowForm 將選項及預設值設置至FormFields後處理前端表單顯示介面並匯出HTML
 func (h *Handler) ShowForm(ctx *context.Context) {
 	param := guard.GetShowFormParam(ctx)
 
@@ -23,6 +24,7 @@ func (h *Handler) ShowForm(ctx *context.Context) {
 	h.showForm(ctx, "", param.Prefix, param.Param, false)
 }
 
+// showForm 將選項及預設值設置至FormFields後處理前端表單顯示介面並匯出HTML
 func (h *Handler) showForm(ctx *context.Context, alert template2.HTML, prefix string, param parameter.Parameters, isEdit bool, animation ...bool) {
 	// table 先透過參數prefix取得Table(interface)，接著判斷條件後將[]context.Node加入至Handler.operations後回傳
 	panel := h.table(prefix, ctx)
@@ -44,6 +46,7 @@ func (h *Handler) showForm(ctx *context.Context, alert template2.HTML, prefix st
 	}
 
 	// formInfo為所有欄位資訊(包含資料數值)
+	// GetDataWithId 透過id取得資料，並且將選項、預設值...等資訊設置至FormFields
 	formInfo, err := panel.GetDataWithId(param)
 
 	// DeletePK 刪除Parameters.Fields[__pk]
@@ -109,8 +112,8 @@ func (h *Handler) showForm(ctx *context.Context, alert template2.HTML, prefix st
 		SetTitle("編輯").
 		SetHiddenFields(hiddenFields).            // 隱藏資訊
 		SetOperationFooter(formFooter(footerKind, // formFooter 處理繼續新增、繼續編輯、保存、重製....等HTML語法
-						f.IsHideContinueEditCheckBox,
-						f.IsHideContinueNewCheckBox,
+						!f.IsHideContinueEditCheckBox,
+						!f.IsHideContinueNewCheckBox,
 						f.IsHideResetButton)).
 		SetHeader(f.HeaderHtml). // ex:HeaderHtml、FooterHtml為[]
 		SetFooter(f.FooterHtml), len(formInfo.GroupFieldHeaders) > 0, !isNotIframe, f.IsHideBackButton, f.Header)
@@ -132,7 +135,7 @@ func (h *Handler) showForm(ctx *context.Context, alert template2.HTML, prefix st
 	}
 }
 
-// EditForm 更新資料
+// EditForm 更新資料(POST功能)
 func (h *Handler) EditForm(ctx *context.Context) {
 	param := guard.GetEditFormParam(ctx)
 
@@ -143,8 +146,7 @@ func (h *Handler) EditForm(ctx *context.Context) {
 			if ctx.WantJSON() {
 				response.Error(ctx, err.Error())
 			} else {
-				//**************函式還沒寫***********************
-				// h.showForm(ctx, aAlert().Warning(err.Error()), param.Prefix, param.Param, true)
+				h.showForm(ctx, aAlert().Warning(err.Error()), param.Prefix, param.Param, true)
 			}
 			return
 		}
@@ -171,8 +173,7 @@ func (h *Handler) EditForm(ctx *context.Context) {
 		if ctx.WantJSON() {
 			response.Error(ctx, err.Error())
 		} else {
-			//**************函式還沒寫***********************
-			// h.showForm(ctx, aAlert().Warning(err.Error()), param.Prefix, param.Param, true)
+			h.showForm(ctx, aAlert().Warning(err.Error()), param.Prefix, param.Param, true)
 		}
 		return
 	}
@@ -188,15 +189,18 @@ func (h *Handler) EditForm(ctx *context.Context) {
 		})
 		return
 	}
+
+	// --------------在介面中選擇繼續新增會執行，執行後直接return---------------
 	if !param.FromList {
 		if isNewUrl(param.PreviousPath, param.Prefix) {
-			//**************函式還沒寫***********************
-			//h.showNewForm(ctx, param.Alert, param.Prefix, param.Param.DeleteEditPk().GetRouteParamStr(), true)
+			// ---------------------繼續編輯新增此條件後return----------------
+			// 新增表單介面不需要__edit_pk
+			h.showNewForm(ctx, param.Alert, param.Prefix, param.Param.DeleteEditPk().GetRouteParamStr(), true)
 			return
 		}
 		if isEditUrl(param.PreviousPath, param.Prefix) {
-			//**************函式還沒寫***********************
-			// h.showForm(ctx, param.Alert, param.Prefix, param.Param, true, false)
+			// ---------------------繼續編輯執行此條件後return----------------
+			h.showForm(ctx, param.Alert, param.Prefix, param.Param, true, false)
 			return
 		}
 		ctx.HTML(http.StatusOK, fmt.Sprintf(`<script>location.href="%s"</script>`, param.PreviousPath))
@@ -214,9 +218,8 @@ func (h *Handler) EditForm(ctx *context.Context) {
 		return
 	}
 
-	//**************函式還沒寫***********************
-	// buf := h.showTable(ctx, param.Prefix, param.Param.DeletePK().DeleteEditPk(), nil)
-	//ctx.HTML(http.StatusOK, buf.String())
+	buf := h.showTable(ctx, param.Prefix, param.Param.DeletePK().DeleteEditPk(), nil)
+	ctx.HTML(http.StatusOK, buf.String())
 
 	ctx.AddHeader("X-PJAX-Url", param.PreviousPath)
 }

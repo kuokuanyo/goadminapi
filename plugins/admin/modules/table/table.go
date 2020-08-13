@@ -87,7 +87,7 @@ type Table interface {
 	GetOnlyNewForm() bool
 	GetOnlyUpdateForm() bool
 
-	// Copy() Table
+	Copy() Table
 }
 
 // 透過參數key及gen(function)添加至GeneratorList(map[string]Generator)
@@ -130,7 +130,7 @@ func SetServices(srv service.List) {
 
 // ------------------------table(interface)的方法---------------------
 
-// GetInfo 將參數值設置至base.Info(InfoPanel(struct)).primaryKey
+// GetInfo 取得table中設置的InfoPanel(struct)，在generators.go設置的資訊
 func (base *BaseTable) GetInfo() *types.InfoPanel {
 	return base.Info.SetPrimaryKey(base.PrimaryKey.Name, base.PrimaryKey.Type)
 }
@@ -138,12 +138,12 @@ func (base *BaseTable) GetInfo() *types.InfoPanel {
 // GetPrimaryKey return BaseTable.PrimaryKey(struct)
 func (base *BaseTable) GetPrimaryKey() PrimaryKey { return base.PrimaryKey }
 
-// GetForm 將參數值設置至BaseTable.Form(FormPanel(struct)).primaryKey
+// GetForm 取得table中設置的FormPanel(struct)，在generators.go設置的資訊
 func (base *BaseTable) GetForm() *types.FormPanel {
 	return base.Form.SetPrimaryKey(base.PrimaryKey.Name, base.PrimaryKey.Type)
 }
 
-// GetDetail 將參數值設置至base.Detail(InfoPanel(struct)).primaryKey中後回傳InfoPanel(struct)
+// GetDetail 取得table中設置的InfoPanel(struct)，在generators.go設置的資訊
 func (base *BaseTable) GetDetail() *types.InfoPanel {
 	return base.Detail.SetPrimaryKey(base.PrimaryKey.Name, base.PrimaryKey.Type)
 }

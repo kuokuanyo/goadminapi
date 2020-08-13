@@ -81,6 +81,33 @@ func NewDefaultTable(cfgs ...Config) Table {
 
 //-----------------------------table(interface)的方法--------------------------------
 
+func (tb *DefaultTable) Copy() Table {
+	return &DefaultTable{
+		BaseTable: &BaseTable{
+			Form: types.NewFormPanel().SetTable(tb.Form.Table).
+				SetDescription(tb.Form.Description).
+				SetTitle(tb.Form.Title),
+			Info: types.NewInfoPanel(tb.PrimaryKey.Name).SetTable(tb.Info.Table).
+				SetDescription(tb.Info.Description).
+				SetTitle(tb.Info.Title).
+				SetGetDataFn(tb.Info.GetDataFn),
+			Detail: types.NewInfoPanel(tb.PrimaryKey.Name).SetTable(tb.Detail.Table).
+				SetDescription(tb.Detail.Description).
+				SetTitle(tb.Detail.Title).
+				SetGetDataFn(tb.Detail.GetDataFn),
+			CanAdd:     tb.CanAdd,
+			Editable:   tb.Editable,
+			Deletable:  tb.Deletable,
+			Exportable: tb.Exportable,
+			PrimaryKey: tb.PrimaryKey,
+		},
+		connectionDriver: tb.connectionDriver,
+		connection:       tb.connection,
+		sourceURL:        tb.sourceURL,
+		getDataFun:       tb.getDataFun,
+	}
+}
+
 // GetNewForm 處理並取得表單欄位資訊(設置選項...等)
 func (tb *DefaultTable) GetNewForm() FormInfo {
 	// -------------一般tb.Form.TabGroups=0，執行直接return--------------------
@@ -155,7 +182,7 @@ func (tb *DefaultTable) GetData(params parameter.Parameters) (PanelInfo, error) 
 	}, nil
 }
 
-// GetDataWithId 透過id取得資料，並且將選項、預設值...等資訊設置至FormFields
+// GetDataWithId 透過id取得資料，並且將選項、預設值...等資訊設置至FormFields(帶有預設值)
 func (tb *DefaultTable) GetDataWithId(param parameter.Parameters) (FormInfo, error) {
 	var (
 		res     map[string]interface{}
@@ -290,7 +317,7 @@ func (tb *DefaultTable) GetDataWithId(param parameter.Parameters) (FormInfo, err
 		}, nil
 	}
 
-	// FieldsWithValue 設置選項、預設值...等資訊至FormFields
+	// FieldsWithValue 設置選項、預設值...等資訊至FormFields(帶有預設值)
 	var fieldList = tb.Form.FieldsWithValue(tb.PrimaryKey.Name, id, columns, res, tb.sql)
 	return FormInfo{
 		FieldList:         fieldList,

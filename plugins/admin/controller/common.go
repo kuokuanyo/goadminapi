@@ -156,9 +156,9 @@ func (h *Handler) AddOperation(nodes ...context.Node) {
 	h.operations = append(h.operations, addNodes...)
 }
 
-// table 先透過參數prefix取得Table(interface)，接著判斷條件後將[]context.Node加入至Handler.operations後回傳
+// table 透過參數prefix取得Table(interface)，在generators.go設定的資訊
 func (h *Handler) table(prefix string, ctx *context.Context) table.Table {
-	// 透過參數prefix執行函式取得table(interface)
+	// 透過參數prefix執行函式取得table(interface)，在generators.go設定的資訊
 	t := h.generators[prefix](ctx)
 
 	// 建立Invoker(Struct)並透過參數ctx取得UserModel，並且取得該user的role、權限與可用menu，最後檢查用戶權限
@@ -318,12 +318,8 @@ func formFooter(page string, isHideEdit, isHideNew, isHideReset bool) template2.
 	let previous_url = $('input[name="` + "__previous_" + `"]').attr("value")
 	$('.continue_new').iCheck({checkboxClass: 'icheckbox_minimal-blue'}).on('ifChanged', function (event) {
 		if (this.checked) {
-			console.log(1)
-			console.log(location.href)
 			$('input[name="` + "__previous_" + `"]').val(location.href)
 		} else {
-			console.log(2)
-			console.log(previous_url_goadmin)
 			$('input[name="` + "__previous_" + `"]').val(previous_url)
 		}
 	});
@@ -352,6 +348,27 @@ func formFooter(page string, isHideEdit, isHideNew, isHideReset bool) template2.
 
 	return col1 + col2
 }
+
+// detailContent detail頁面語法
+func detailContent(form types.FormAttribute, editUrl, deleteUrl string, iframe bool) template2.HTML {
+	return aBox().
+		SetHeader(form.GetDetailBoxHeader(editUrl, deleteUrl)).
+		WithHeadBorder().
+		SetBody(form.GetContent()).
+		SetIframeStyle(iframe).
+		GetContent()
+}
+
+// menuFormContent 菜單表單資訊HTML語法
+func menuFormContent(form types.FormAttribute) template2.HTML {
+	return aBox().
+		SetHeader(form.GetBoxHeaderNoButton()).
+		SetStyle(" ").
+		WithHeadBorder().
+		SetBody(form.GetContent()).
+		GetContent()
+}
+
 
 // 將參數h.services.Get(auth.TokenServiceKey)轉換成TokenService(struct)類別後回傳
 func (h *Handler) authSrv() *auth.TokenService {
@@ -400,4 +417,12 @@ func aCol() types.ColAttribute {
 
 func aButton() types.ButtonAttribute {
 	return aTemplate().Button()
+}
+
+func aTree() types.TreeAttribute {
+	return aTemplate().Tree()
+}
+
+func aRow() types.RowAttribute {
+	return aTemplate().Row()
 }

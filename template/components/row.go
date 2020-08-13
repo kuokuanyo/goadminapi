@@ -23,8 +23,7 @@ func (compo *RowAttribute) AddContent(value template.HTML) types.RowAttribute {
 	return compo
 }
 
-// 首先將符合TreeAttribute.TemplateList["components/tree-header"](map[string]string)的值加入text(string)，接著將參數及功能添加給新的模板並解析模板
+// 首先將符合TreeAttribute.TemplateList["components/row"](map[string]string)的值加入text(string)，接著將參數及功能添加給新的模板並解析模板
 func (compo *RowAttribute) GetContent() template.HTML {
-	// 首先將符合TreeAttribute.TemplateList["components/row"](map[string]string)的值加入text(string)，接著將參數及功能添加給新的模板並解析模板
 	return ComposeHtml(compo.TemplateList, *compo, "row")
 }

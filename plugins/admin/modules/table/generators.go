@@ -664,7 +664,7 @@ func (s *SystemTable) GetMenuTable(ctx *context.Context) (menuTable Table) {
 	info.AddField("更新時間", "updated_at", db.Timestamp)
 
 	// 設置刪除函式，與菜單有關聯的資料都必須刪除
-	info.SetTable("menu").SetTitle("菜單").SetDescription("菜單管理").
+	info.SetTable("menu").SetTitle("Menu").SetDescription("Menu Manage").
 		SetDeleteFn(func(idArr []string) error {
 			var ids = interfaces(idArr)
 			_, txErr := s.connection().WithTransaction(func(tx *sql.Tx) (e error, i map[string]interface{}) {
@@ -781,8 +781,8 @@ func (s *SystemTable) GetMenuTable(ctx *context.Context) (menuTable Table) {
 	formList.AddField("建立時間", "created_at", db.Timestamp, form.Default).FieldNotAllowAdd()
 
 	formList.SetTable("menu").
-		SetTitle("菜單").
-		SetDescription("菜單管理")
+		SetTitle("Menu").
+		SetDescription("Menu Manage")
 
 	return
 }
