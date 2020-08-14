@@ -109,7 +109,7 @@ func (h *Handler) showForm(ctx *context.Context, alert template2.HTML, prefix st
 		SetUrl(editUrl).
 		SetAjax(f.AjaxSuccessJS, f.AjaxErrorJS).
 		SetLayout(f.Layout).                      // ex:LayoutDefault
-		SetTitle("編輯").
+		SetTitle("Edit").
 		SetHiddenFields(hiddenFields).            // 隱藏資訊
 		SetOperationFooter(formFooter(footerKind, // formFooter 處理繼續新增、繼續編輯、保存、重製....等HTML語法
 						!f.IsHideContinueEditCheckBox,

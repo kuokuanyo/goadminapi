@@ -340,8 +340,8 @@ func (t UserModel) CheckPermissionByUrlMethod(path, method string, formParams ur
 		path = path[:len(path)-1]
 	}
 
-	path = strings.Replace(path, "_edit_pk", "id", -1)
-	path = strings.Replace(path, "_detail_pk", "id", -1)
+	path = strings.Replace(path, "__edit_pk", "id", -1)
+	path = strings.Replace(path, "__detail_pk", "id", -1)
 
 	// 取得路徑及參數
 	path, params := getParam(path)

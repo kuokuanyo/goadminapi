@@ -132,7 +132,7 @@ func (s *SystemTable) GetManagerTable(ctx *context.Context) (managerTable Table)
 	info.AddField("建立時間", "created_at", db.Timestamp)
 	info.AddField("更新時間", "updated_at", db.Timestamp)
 
-	info.SetTable("users").SetTitle("用戶").SetDescription("用戶管理").
+	info.SetTable("users").SetTitle("User").SetDescription("User Manage").
 		// 設置刪除函式，除了刪除users資料表，其他關連表資料也必須刪除
 		SetDeleteFn(func(idArr []string) error {
 
@@ -225,7 +225,7 @@ func (s *SystemTable) GetManagerTable(ctx *context.Context) (managerTable Table)
 			return ""
 		})
 
-	formList.SetTable("users").SetTitle("用戶").SetDescription("用戶管理")
+	formList.SetTable("users").SetTitle("User").SetDescription("User Manage")
 	// 設置更新函式，必須先刪除角色及權限後再新增
 	formList.SetUpdateFn(func(values form2.Values) error {
 		if values.IsEmpty("name", "username") {
@@ -394,7 +394,7 @@ func (s *SystemTable) GetRolesTable(ctx *context.Context) (roleTable Table) {
 	info.AddField("更新時間", "updated_at", db.Timestamp)
 
 	// 刪除也必須刪除其他關連表資料
-	info.SetTable("roles").SetTitle("角色").SetDescription("角色管理").
+	info.SetTable("roles").SetTitle("Roles").SetDescription("Roles Manage").
 		SetDeleteFn(func(idArr []string) error {
 			var ids = interfaces(idArr)
 			_, txErr := s.connection().WithTransaction(func(tx *sql.Tx) (e error, i map[string]interface{}) {
@@ -460,7 +460,7 @@ func (s *SystemTable) GetRolesTable(ctx *context.Context) (roleTable Table) {
 		link("/admin/info/permission/new", "立刻新增一個"))
 	formList.AddField("建立時間", "updated_at", db.Timestamp, form.Default).FieldNotAllowAdd()
 	formList.AddField("更新時間", "created_at", db.Timestamp, form.Default).FieldNotAllowAdd()
-	formList.SetTable("roles").SetTitle("角色").SetDescription("角色管理")
+	formList.SetTable("roles").SetTitle("Roles").SetDescription("Roles Manage")
 
 	// 設置更新函式，必須先刪除所有相關資料表的權限，再新增設置的權限
 	formList.SetUpdateFn(func(values form2.Values) error {
@@ -555,8 +555,8 @@ func (s *SystemTable) GetPermissionTable(ctx *context.Context) (permissionTable 
 
 	// 刪除也必須刪除其他關連表資料
 	info.SetTable("permissions").
-		SetTitle("權限").
-		SetDescription("權限管理").
+		SetTitle("Permission").
+		SetDescription("Permission Manage").
 		SetDeleteFn(func(idArr []string) error {
 			var ids = interfaces(idArr)
 
@@ -623,8 +623,8 @@ func (s *SystemTable) GetPermissionTable(ctx *context.Context) (permissionTable 
 	formList.AddField("更新時間", "created_at", db.Timestamp, form.Default).FieldNotAllowAdd()
 
 	formList.SetTable("permissions").
-		SetTitle("權限").
-		SetDescription("權限管理").
+		SetTitle("Permission").
+		SetDescription("Permission Manage").
 		// SetPostValidator 新增函式func(values form.Values) error至FormPanel.Validator
 		SetPostValidator(func(values form2.Values) error {
 			if values.IsEmpty("slug", "http_path", "name") {

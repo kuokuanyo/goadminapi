@@ -140,12 +140,12 @@ $('.delete-btn').on('click', function (event) {
 	if isNotIframe {
 		title = detail.Title
 		if title == "" {
-			title = info.Title + "細節"
+			title = info.Title
 		}
 
 		desc = detail.Description
 		if desc == "" {
-			desc = info.Description + "細節"
+			desc = info.Title + "Detail"
 		}
 	}
 

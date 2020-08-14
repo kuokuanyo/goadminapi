@@ -58,13 +58,13 @@ func DefaultInvoker(conn db.Connection) *Invoker {
 				}, ``)
 			} else {
 				// 登入時間過長或同個IP登入
-				msg := "login overdue, please login again"
+				msg := "登入逾時，請重新登入"
 				//添加HTML
 				ctx.HTML(http.StatusOK, `<script>
 	if (typeof(swal) === "function") {
 		swal({
 			type: "info",
-			title: `+"login info"+`,
+			title: "login info",
 			text: "`+msg+`",
 			showCancelButton: false,
 			confirmButtonColor: "#3c8dbc",

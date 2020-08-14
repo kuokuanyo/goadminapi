@@ -28,7 +28,7 @@ func (h *Handler) Auth(ctx *context.Context) {
 		response.BadRequest(ctx, "wrong password or username")
 		return
 	}
-	// 檢查user密碼是否正確之後取得user的role、permission及可用menu，最後更新資料表(goadmin_users)的密碼值(加密)
+	// 檢查user密碼是否正確之後取得user的role、permission及可用menu，最後更新資料表(users)的密碼值(加密)
 	user, ok = auth.Check(password, username, h.conn)
 	if !ok {
 		response.BadRequest(ctx, errMsg)

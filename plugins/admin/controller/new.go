@@ -78,7 +78,7 @@ func (h *Handler) showNewForm(ctx *context.Context, alert template2.HTML, prefix
 		SetLayout(f.Layout).                       // ex:LayoutDefault
 		SetPrimaryKey(panel.GetPrimaryKey().Name). // ex:id
 		SetHiddenFields(hiddenFields).
-		SetTitle("新建").
+		SetTitle("New").
 		// formFooter 處理繼續新增、繼續編輯、保存、重製....等HTML語法
 		SetOperationFooter(formFooter("new", f.IsHideContinueEditCheckBox, f.IsHideContinueNewCheckBox,
 						f.IsHideResetButton)).
