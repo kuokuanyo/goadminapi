@@ -1,14 +1,17 @@
 package adapter
 
 import (
+	"bytes"
 	"goadminapi/context"
 	"goadminapi/modules/auth"
+	"goadminapi/modules/config"
 	"goadminapi/modules/db"
+	"goadminapi/modules/menu"
 	"goadminapi/plugins"
 	"goadminapi/plugins/admin/models"
-	"net/url"
-
+	"goadminapi/template"
 	"goadminapi/template/types"
+	"net/url"
 )
 
 // WebFrameWork功能都設定在框架中(使用/adapter/gin/gin.go框架)
@@ -97,7 +100,6 @@ func (base *BaseAdapter) GetUse(app interface{}, plugin []plugins.Plugin, wf Web
 	return nil
 }
 
-
 // 透過參數取得cookie後，利用cookie取得用戶角色、權限以及可用menu，最後將UserModel.Conn = nil後回傳UserModel
 // -------wf參數應該會放Gin(struct)------------
 func (base *BaseAdapter) GetUser(ctx interface{}, wf WebFrameWork) (models.UserModel, bool) {
@@ -134,63 +136,45 @@ func (base *BaseAdapter) GetContent(ctx interface{}, getPanelFn types.GetPanelFn
 
 	// wf.GetConnection()回傳BaseAdapter.db(interface)
 	// 透過參數sesKey(cookie)取得id並利用id取得該user的role、permission以及可用menu，最後回傳UserModel(struct)
-	_, authSuccess := auth.GetCurUser(cookie, wf.GetConnection())
+	user, authSuccess := auth.GetCurUser(cookie, wf.GetConnection())
 	if !authSuccess {
 		newBase.Redirect()
 		return
 	}
 
 	// -----------------------------------------
-	// var (
-	// 	panel types.Panel
-	// 	err   error
-	// )
+	var (
+		panel types.Panel
+		err   error
+	)
 
-	// // CheckPermissions檢查用戶權限(在modules\auth\middleware.go)
-	// if !auth.CheckPermissions(user, newBase.Path(), newBase.Method(), newBase.FormParam()) {
-	// 	panel = template.WarningPanel("no permission", template.NoPermission403Page)
-	// } else {
-	// 	panel, err = getPanelFn(ctx)
-	// 	if err != nil {
-	// 		panel = template.WarningPanel(err.Error())
-	// 	}
-	// }
-	// --------------------------------------------------
-	// fn(panel.Callbacks...)
+	// CheckPermissions檢查用戶權限(在modules\auth\middleware.go)
+	if !auth.CheckPermissions(user, newBase.Path(), newBase.Method(), newBase.FormParam()) {
+		panel = template.WarningPanel("no permission", template.NoPermission403Page)
+	} else {
+		panel, err = getPanelFn(ctx)
+		if err != nil {
+			panel = template.WarningPanel(err.Error())
+		}
+	}
 
-	// // Default()取得預設的template(主題名稱已經通過全局配置)
-	// // tmpl類別為template.Template(interface)，在template/template.go中
-	// // template.Template為ui組件的方法，將在plugins中自定義ui
-	// // IsPjax()在gin/gin.go中，設置標頭 X-PJAX = true
-	// // GetTemplate(bool)為template.Template(interface)的方法
-	// tmpl, tmplName := template.Default().GetTemplate(newBase.IsPjax())
+	fn(panel.Callbacks...)
 
-	// buf := new(bytes.Buffer)
+	tmpl, tmplName := template.Default().GetTemplate(newBase.IsPjax())
 
-	// // ExecuteTemplate執行模板(html\template\template.go中Template的方法)
-	// // 藉由給的tmplName應用模板到指定的對象(第三個參數)
-	// hasError = tmpl.ExecuteTemplate(buf, tmplName, types.NewPage(types.NewPageParam{
-	// 	User:         user,
-	// 	// GetGlobalMenu 返回user的menu(modules\menu\menu.go中)
-	// 	// Menu(struct包含)List、Options、MaxOrder
-	// 	Menu:         menu.GetGlobalMenu(user, wf.GetConnection()).SetActiveClass(config.URLRemovePrefix(newBase.Path())),
-	// 	// IsProductionEnvironment檢查生產環境
-	// 	// GetContent在template\types\page.go
-	// 	// Panel(struct)主要內容使用pjax的模板
-	// 	// GetContent獲取內容(設置前端HTML)，設置Panel並回傳
-	// 	Panel:        panel.GetContent(config.IsProductionEnvironment()),
-	// 	// Assets類別為template.HTML(string)
-	// 	// 處理asset後並回傳HTML語法
-	// 	Assets:       template.GetComponentAssetImportHTML(),
-	// 	// 檢查權限，回傳Buttons([]Button(interface))
-	// 	// 在template\types\button.go
-	// 	Buttons:      navButtons.CheckPermission(user),
-	// 	TmplHeadHTML: template.Default().GetHeadHTML(),
-	// 	TmplFootJS:   template.Default().GetFootJS(),
-	// }))
+	buf := new(bytes.Buffer)
 
-	// 設置ContentType
+	hasError = tmpl.ExecuteTemplate(buf, tmplName, types.NewPage(types.NewPageParam{
+		User:         user,
+		Menu:         menu.GetGlobalMenu(user, wf.GetConnection()).SetActiveClass(config.URLRemovePrefix(newBase.Path())),
+		Panel:        panel.GetContent(config.IsProductionEnvironment()),
+		Assets:       template.GetComponentAssetImportHTML(),
+		Buttons:      navButtons.CheckPermission(user),
+		TmplHeadHTML: template.Default().GetHeadHTML(),
+		TmplFootJS:   template.Default().GetFootJS(),
+	}))
+
 	newBase.SetContentType()
-	// 寫入
-	// newBase.Write(buf.Bytes())
+
+	newBase.Write(buf.Bytes())
 }

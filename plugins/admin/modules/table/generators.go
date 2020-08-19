@@ -437,7 +437,7 @@ func (s *SystemTable) GetRolesTable(ctx *context.Context) (roleTable Table) {
 	// 處理表單欄位資訊與函式(更新、新增)
 	formList := roleTable.GetForm().AddXssJsFilter()
 	formList.AddField("ID", "id", db.Int, form.Default).FieldNotAllowEdit().FieldNotAllowAdd()
-	formList.AddField("角色", "name", db.Varchar, form.Text).FieldMust()
+	formList.AddField("角色", "name", db.Varchar, form.Text).FieldHelpMsg(template.HTML("不能重複")).FieldMust()
 	formList.AddField("標誌", "slug", db.Varchar, form.Text).FieldHelpMsg(template.HTML("不能重複")).FieldMust()
 	formList.AddField("權限", "permission_id", db.Varchar, form.SelectBox).
 		// 從permissions取得選項
@@ -528,7 +528,7 @@ func (s *SystemTable) GetPermissionTable(ctx *context.Context) (permissionTable 
 	// 增加權限頁面欄位資訊與函式
 	// *********用戶名稱、標誌可以篩選*************
 	info.AddField("ID", "id", db.Int).FieldSortable()
-	info.AddField("用戶名稱", "username", db.Varchar).FieldFilterable()
+	info.AddField("權限", "name", db.Varchar).FieldFilterable()
 	info.AddField("標誌", "slug", db.Varchar).FieldFilterable()
 	info.AddField("方法", "http_method", db.Varchar).
 		FieldDisplay(func(value types.FieldModel) interface{} {
@@ -594,8 +594,8 @@ func (s *SystemTable) GetPermissionTable(ctx *context.Context) (permissionTable 
 	// 處理表單欄位資訊與函式(更新、新增)
 	formList := permissionTable.GetForm().AddXssJsFilter()
 	formList.AddField("ID", "id", db.Int, form.Default).FieldNotAllowEdit().FieldNotAllowAdd()
-	formList.AddField("權限", "name", db.Varchar, form.Text).FieldMust()
-	formList.AddField("標誌", "slug", db.Varchar, form.Text).FieldHelpMsg(template.HTML("標誌不能重複")).FieldMust()
+	formList.AddField("權限", "name", db.Varchar, form.Text).FieldHelpMsg(template.HTML("不能重複")).FieldMust()
+	formList.AddField("標誌", "slug", db.Varchar, form.Text).FieldHelpMsg(template.HTML("不能重複")).FieldMust()
 	formList.AddField("方法", "http_method", db.Varchar, form.Select).
 		FieldOptions(types.FieldOptions{
 			{Value: "GET", Text: "GET"},

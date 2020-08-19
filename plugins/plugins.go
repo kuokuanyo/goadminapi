@@ -26,18 +26,12 @@ type Plugin interface {
 	Prefix() string
 }
 
+// --------------------------plugin(interface)的方法--------------------------
+
 // 回傳Base.App.Handlers(map[Path]Handlers)，path(struct)裡包含URL、method
 func (b *Base) GetHandler() context.HandlerMap {
 	return b.App.Handlers
 }
-
-// 透過參數srv(map[string]Service)設置至Base(struct).Services並且設置Base.Conn、Base.UI
-func (b *Base) InitBase(srv service.List) {
-	b.Services = srv
-	b.Conn = db.GetConnection(b.Services)
-	b.UI = ui.GetService(b.Services)
-}
-
 // 回傳Base.PlugName
 func (b *Base) Name() string {
 	return b.PlugName
@@ -47,3 +41,13 @@ func (b *Base) Name() string {
 func (b *Base) Prefix() string {
 	return b.URLPrefix
 }
+
+// --------------------------plugin(interface)的方法--------------------------
+
+// 透過參數srv(map[string]Service)設置至Base(struct).Services並且設置Base.Conn、Base.UI
+func (b *Base) InitBase(srv service.List) {
+	b.Services = srv
+	b.Conn = db.GetConnection(b.Services)
+	b.UI = ui.GetService(b.Services)
+}
+

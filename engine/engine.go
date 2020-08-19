@@ -62,8 +62,8 @@ func (eng *Engine) DefaultConnection() db.Connection {
 // Config APIs
 // ============================
 
-// 將參數cfg(struct)數值處理後設置至globalCfg，最後設置至Engine.config
-// --------此函式有處理globalCfg-------------
+// 將參數值處理後設置至全局變數globalCfg，最後設置至Engine.config
+// --------此函式處理全局變數globalCfg-------------
 func (eng *Engine) setConfig(cfg config.Config) *Engine {
 	// 設置Config(struct)title、theme、登入url、前綴url...資訊，如果參數cfg(struct)有些數值為空值，設置預設值
 	// 最後回傳globalCfg
@@ -133,13 +133,14 @@ func (eng *Engine) Use(router interface{}) error {
 
 	// DefaultConnection透過資料庫引擎(driver)回傳預設的Connection(interface)
 	site := models.Site().SetConn(eng.DefaultConnection())
+
 	// ToMap將Config的值設置至map[string]string
 	site.Init(eng.config.ToMap())
+
 	// 更新Config(struct)值(從site資料表資訊更新)
 	_ = eng.config.Update(site.AllToMap())
 
 	// 藉由參數新增List(map[string]Service)，新增config
-	// config.SrvWithConfig設置Service
 	eng.Services.Add("config", config.SrvWithConfig(eng.config))
 
 	//------------------------------------------------
@@ -164,12 +165,12 @@ func (eng *Engine) Use(router interface{}) error {
 	// 		action.JumpInNewTab(config.Url("/info/generate/new"),
 	// 			language.GetWithScope("tool", "tool")))
 	// }
+	//------------------------------------------------
 
 	navButtons = eng.NavButtons
 
 	// 藉由參數新增List(map[string]Service)，新增ui
 	eng.Services.Add("ui", ui.NewService(eng.NavButtons))
-	//------------------------------------------------
 
 	// 取得匹配的eng.Services然後轉換成Connection(interface)類別
 	defaultConnection := db.GetConnection(eng.Services)
@@ -181,7 +182,6 @@ func (eng *Engine) Use(router interface{}) error {
 
 	// Initialize plugins
 	for i := range eng.PluginList {
-		// 初始化每個plugin
 		eng.PluginList[i].InitPlugin(eng.Services)
 	}
 

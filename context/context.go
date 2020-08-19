@@ -60,7 +60,7 @@ type Node struct {
 	Value    map[string]interface{}
 }
 
-// 取得app(struct)，空的
+// NewApp 取得app(struct)，空的
 func NewApp() *App {
 	return &App{
 		Requests:    make([]Path, 0),

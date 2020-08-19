@@ -58,8 +58,9 @@ func GetConnectionByDriver(driver string) Connection {
 	case "mysql":
 		// 取得*Mysql(struct)，也屬於Connection(interface)
 		return GetMysqlDB()
-	// case "mssql":
-	// 	return GetMssqlDB()
+	case "mssql":
+		// 取得*Mssql(struct)，也屬於Connection(interface)
+		return GetMssqlDB()
 	// case "sqlite":
 	// 	return GetSqliteDB()
 	// case "postgresql":
@@ -143,8 +144,8 @@ func GetAggregationExpression(driver, field, headField, delimiter string) string
 		return fmt.Sprintf("group_concat(%s separator '%s') as %s", field, delimiter, headField)
 	// case "sqlite":
 	// 	return fmt.Sprintf("group_concat(%s, '%s') as %s", field, delimiter, headField)
-	// case "mssql":
-	// 	return fmt.Sprintf("string_agg(%s, '%s') as [%s]", field, delimiter, headField)
+	case "mssql":
+		return fmt.Sprintf("string_agg(%s, '%s') as [%s]", field, delimiter, headField)
 	default:
 		panic("wrong driver")
 	}

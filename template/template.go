@@ -187,7 +187,7 @@ func Themes() []string {
 	return names
 }
 
-// 取得預設的Template(interface)
+// Default 取得預設的Template(interface)
 func Default() Template {
 	if temp, ok := templateMap[c.GetTheme()]; ok {
 		return temp
@@ -195,7 +195,7 @@ func Default() Template {
 	panic("wrong theme name")
 }
 
-// 判斷templateMap(map[string]Template)的key鍵是否參數theme，有則回傳Template(interface)
+// Get 透過參數取得Template(interface)
 func Get(theme string) Template {
 	if temp, ok := templateMap[theme]; ok {
 		return temp
@@ -203,7 +203,7 @@ func Get(theme string) Template {
 	panic("wrong theme name")
 }
 
-// 判斷map[string]Component是否有參數name(key)的值，有的話則回傳Component(interface)
+// GetComp 透過參數取得Component(interface)
 func GetComp(name string) Component {
 	// Component(interface)
 	if comp, ok := compMap[name]; ok {
@@ -321,9 +321,9 @@ func WarningPanel(msg string, pts ...PageType) types.Panel {
 
 // GetPageContentFromPageType從頁面類型取得頁面內容
 func GetPageContentFromPageType(title, desc, msg string, pt PageType) (template.HTML, template.HTML, template.HTML) {
-	if c.GetDebug() {
-		return template.HTML(title), template.HTML(desc), Default().Alert().Warning(msg)
-	}
+	// if c.GetDebug() {
+	// 	return template.HTML(title), template.HTML(desc), Default().Alert().Warning(msg)
+	// }
 	if pt == Missing404Page {
 		if c.GetCustom404HTML() != template.HTML("") {
 			return "", "", c.GetCustom404HTML()

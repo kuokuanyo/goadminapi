@@ -4,13 +4,13 @@ import (
 	"goadminapi/engine"
 	"goadminapi/modules/config"
 
-	_ "goadminapi/adapter/gin"
+	"github.com/gin-gonic/gin"
 
+	_ "goadminapi/adapter/gin"
 	_ "goadminapi/themes/adminlte"
 
+	_ "github.com/denisenkom/go-mssqldb"
 	_ "github.com/go-sql-driver/mysql"
-
-	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -38,7 +38,8 @@ func main() {
 			Prefix: "uploads",
 		},
 	}
-	// 首先將參數cfg(struct)數值處理後設置至globalCfg，接著設置至Engine.config
+	
+	// AddConfig 首先將參數cfg(struct)數值處理後設置至globalCfg，接著設置至Engine.config
 	// 再來將driver加入Engine.Services，初始化所有資料庫連線並啟動引擎
 	_ = eng.AddConfig(cfg).Use(r)
 

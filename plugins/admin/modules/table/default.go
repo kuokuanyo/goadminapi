@@ -312,8 +312,8 @@ func (tb *DefaultTable) GetDataWithId(param parameter.Parameters) (FormInfo, err
 			FieldList:         tb.Form.FieldList,
 			GroupFieldList:    groupFormList,
 			GroupFieldHeaders: groupHeaders,
-			Title: tb.Form.Title,
-			Description: tb.Form.Description,
+			Title:             tb.Form.Title,
+			Description:       tb.Form.Description,
 		}, nil
 	}
 
@@ -591,34 +591,34 @@ func (tb *DefaultTable) getColumns(table string) (Columns, bool) {
 			}
 		}
 		return columns, auto
-		// case db.DriverPostgresql:
-		// 	auto := false
-		// 	for key, model := range columnsModel {
-		// 		columns[key] = model["column_name"].(string)
-		// 		if columns[key] == tb.PrimaryKey.Name {
-		// 			if v, ok := model["column_default"].(string); ok {
-		// 				if strings.Contains(v, "nextval") {
-		// 					auto = true
-		// 				}
-		// 			}
-		// 		}
-		// 	}
-		// 	return columns, auto
-		// case db.DriverSqlite:
-		// 	for key, model := range columnsModel {
-		// 		columns[key] = string(model["name"].(string))
-		// 	}
+	// case db.DriverPostgresql:
+	// 	auto := false
+	// 	for key, model := range columnsModel {
+	// 		columns[key] = model["column_name"].(string)
+	// 		if columns[key] == tb.PrimaryKey.Name {
+	// 			if v, ok := model["column_default"].(string); ok {
+	// 				if strings.Contains(v, "nextval") {
+	// 					auto = true
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// 	return columns, auto
+	// case db.DriverSqlite:
+	// 	for key, model := range columnsModel {
+	// 		columns[key] = string(model["name"].(string))
+	// 	}
 
-		// 	num, _ := tb.sql().Table("sqlite_sequence").
-		// 		Where("name", "=", tb.GetForm().Table).Count()
+	// 	num, _ := tb.sql().Table("sqlite_sequence").
+	// 		Where("name", "=", tb.GetForm().Table).Count()
 
-		// 	return columns, num > 0
-		// case db.DriverMssql:
-		// 	for key, model := range columnsModel {
-		// 		columns[key] = string(model["column_name"].(string))
-		// 	}
-		// 	return columns, true
-		// 	}
+	// 	return columns, num > 0
+	case "mssql":
+		for key, model := range columnsModel {
+			columns[key] = string(model["column_name"].(string))
+		}
+		return columns, true
+
 	default:
 		panic("wrong driver")
 	}

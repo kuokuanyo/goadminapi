@@ -83,10 +83,10 @@ func GetDialectByDriver(driver string) Dialect {
 		return mysql{
 			commonDialect: commonDialect{delimiter: "`"},
 		}
-	// case "mssql":
-	// 	return mssql{
-	// 		commonDialect: commonDialect{delimiter: "["},
-	// 	}
+	case "mssql":
+		return mssql{
+			commonDialect: commonDialect{delimiter: "["},
+		}
 	// case "postgresql":
 	// 	return postgresql{
 	// 		commonDialect: commonDialect{delimiter: `"`},

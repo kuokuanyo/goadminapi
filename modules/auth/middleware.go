@@ -105,8 +105,6 @@ func Filter(ctx *context.Context, conn db.Connection) (models.UserModel, bool, b
 	// 設置Session(struct)資訊並取得cookie及設置cookie值
 	ses, err := InitSession(ctx, conn)
 	if err != nil {
-		// 驗證失敗
-		panic(err)
 		return user, false, false
 	}
 

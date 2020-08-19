@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"goadminapi/modules/utils"
 	"html/template"
 	"strconv"
@@ -97,8 +96,6 @@ type Config struct {
 	// Auth user table
 	AuthUserTable string `json:"auth_user_table,omitempty" yaml:"auth_user_table,omitempty" ini:"auth_user_table,omitempty"`
 
-	// Debug mode
-	Debug bool `json:"debug,omitempty" yaml:"debug,omitempty" ini:"debug,omitempty"`
 
 	// Color scheme.
 	ColorScheme string `json:"color_scheme,omitempty" yaml:"color_scheme,omitempty" ini:"color_scheme,omitempty"`
@@ -142,8 +139,8 @@ type Database struct {
 	Params     map[string]string `json:"params,omitempty" yaml:"params,omitempty" ini:"params,omitempty"`
 }
 
-// 設置Config(struct)title、theme、登入url、前綴url...資訊，如果參數cfg(struct)有些數值為空值，設置預設值
-// 最後回傳globalCfg
+// Set 設置Config(struct)title、theme、登入url、前綴url...資訊，如果參數cfg(struct)有些數值為空值，設置預設值
+// ------最後將值設置至全局變數globalCfg------
 func Set(cfg Config) *Config {
 
 	lock.Lock()
@@ -157,7 +154,7 @@ func Set(cfg Config) *Config {
 
 	cfg = SetDefault(cfg)
 
-	//global url前綴
+	// global url前綴
 	if cfg.UrlPrefix == "" {
 		cfg.prefix = "/"
 	} else if cfg.UrlPrefix[0] != '/' {
@@ -174,25 +171,25 @@ func Set(cfg Config) *Config {
 	// 	logger.OpenSQLLog()
 	// }
 
-	if cfg.Debug {
-		declare.Do(func() {
-			fmt.Println(`GoAdmin is now running.
-Running in "debug" mode. Switch to "release" mode in production.`)
-		})
-	}
+	// 	if cfg.Debug {
+	// 		declare.Do(func() {
+	// 			fmt.Println(`GoAdmin is now running.
+	// Running in "debug" mode. Switch to "release" mode in production.`)
+	// 		})
+	// 	}
 
 	globalCfg = &cfg
 
 	return globalCfg
 }
 
-// 如果參數cfg(struct)有些數值為空值，設置預設值
+// SetDefault 如果參數cfg(struct)有些數值為空值，設置預設值
 func SetDefault(cfg Config) Config {
 	// SetDefault假設第一個參數 = 第二個參數回傳第三個參數，沒有的話回傳第一個參數
-	cfg.Title = utils.SetDefault(cfg.Title, "", "Orange")
+	cfg.Title = utils.SetDefault(cfg.Title, "", "晶橙資訊")
 	cfg.LoginTitle = utils.SetDefault(cfg.LoginTitle, "", "晶橙")
-	cfg.Logo = template.HTML(utils.SetDefault(string(cfg.Logo), "", "<b>晶</b>橙"))
-	cfg.MiniLogo = template.HTML(utils.SetDefault(string(cfg.MiniLogo), "", "<b>晶</b>橙"))
+	cfg.Logo = template.HTML(utils.SetDefault(string(cfg.Logo), "", "<b>晶橙</b>"))
+	cfg.MiniLogo = template.HTML(utils.SetDefault(string(cfg.MiniLogo), "", "<b>晶橙</b>"))
 	cfg.Theme = utils.SetDefault(cfg.Theme, "", "adminlte")
 	cfg.IndexUrl = utils.SetDefault(cfg.IndexUrl, "", "/menu")
 	cfg.LoginUrl = utils.SetDefault(cfg.LoginUrl, "", "/login")
@@ -209,17 +206,17 @@ func SetDefault(cfg Config) Config {
 	return cfg
 }
 
-// 取得預設資料庫DatabaseList["default"]的值
+// GetDefault 取得預設資料庫DatabaseList["default"]的值
 func (d DatabaseList) GetDefault() Database {
 	return d["default"]
 }
 
-// 將參數key、db設置至DatabaseList(map[string]Database)
+// Add 將參數key、db設置至DatabaseList(map[string]Database)
 func (d DatabaseList) Add(key string, db Database) {
 	d[key] = db
 }
 
-// 將資料庫依照資料庫引擎分組(ex:mysql一組mssql一組)
+// GroupByDriver 將資料庫依照資料庫引擎分組(ex:mysql一組mssql一組)
 func (d DatabaseList) GroupByDriver() map[string]DatabaseList {
 	drivers := make(map[string]DatabaseList)
 	for key, item := range d {
@@ -233,6 +230,7 @@ func (d DatabaseList) GroupByDriver() map[string]DatabaseList {
 	return drivers
 }
 
+// Copy 複製DatabaseList(map[string]Database)
 func (d DatabaseList) Copy() DatabaseList {
 	var c = make(DatabaseList)
 	for k, v := range d {
@@ -241,7 +239,7 @@ func (d DatabaseList) Copy() DatabaseList {
 	return c
 }
 
-// 將所有globalCfg.Databases[key]的driver值設置至DatabaseList(map[string]Database).Database.Driver後回傳
+// GetDatabases 將全局globalCfg.Databases[key]的driver值設置至DatabaseList(map[string]Database).Database.Driver後回傳
 func GetDatabases() DatabaseList {
 	var list = make(DatabaseList, len(globalCfg.Databases))
 	for key := range globalCfg.Databases {
@@ -252,7 +250,7 @@ func GetDatabases() DatabaseList {
 	return list
 }
 
-// 將參數s轉換成Service(struct)並回傳Service.C(Config struct)
+// GetService 將參數s(interface)轉換成Service(struct)並回傳Config(struct)
 func GetService(s interface{}) *Config {
 	if srv, ok := s.(*Service); ok {
 		return srv.C
@@ -260,7 +258,7 @@ func GetService(s interface{}) *Config {
 	panic("wrong service")
 }
 
-// 取得Config.IndexUrl
+// Index 取得Config.IndexUrl
 func (c *Config) Index() string {
 	if c.IndexUrl == "" {
 		return "/"
@@ -271,12 +269,12 @@ func (c *Config) Index() string {
 	return c.IndexUrl
 }
 
-// 取得Config.prefix
+// Prefix 取得Config.prefix
 func (c *Config) Prefix() string {
 	return c.prefix
 }
 
-// 取得Config.prefix
+// AssertPrefix 取得Config.prefix
 func (c *Config) AssertPrefix() string {
 	if c.prefix == "/" {
 		return ""
@@ -284,7 +282,7 @@ func (c *Config) AssertPrefix() string {
 	return c.prefix
 }
 
-// 處理Config.IndexUrl(登入後導向的url)後回傳
+// GetIndexURL 處理Config.IndexUrl(登入後導向的url)後回傳
 func (c *Config) GetIndexURL() string {
 	// 取得Config.IndexUrl(登入後導向的url)
 	index := c.Index()
@@ -381,25 +379,25 @@ func (d Database) ParamStr() string {
 			p = p[:len(p)-1]
 		}
 	}
-	// if d.Driver == "mssql" {
-	// 	if _, ok := d.Params["encrypt"]; !ok {
-	// 		d.Params["encrypt"] = "disable"
-	// 	}
-	// 	for k, v := range d.Params {
-	// 		p += k + "=" + v + ";"
-	// 	}
-	// 	p = p[:len(p)-1]
-	// }
-	// if d.Driver == "postgresql" {
-	// 	if _, ok := d.Params["sslmode"]; !ok {
-	// 		d.Params["sslmode"] = "disable"
-	// 	}
-	// 	p = " "
-	// 	for k, v := range d.Params {
-	// 		p += k + "=" + v + " "
-	// 	}
-	// 	p = p[:len(p)-1]
-	// }
+	if d.Driver == "mssql" {
+		if _, ok := d.Params["encrypt"]; !ok {
+			d.Params["encrypt"] = "disable"
+		}
+		for k, v := range d.Params {
+			p += k + "=" + v + ";"
+		}
+		p = p[:len(p)-1]
+	}
+	if d.Driver == "postgresql" {
+		if _, ok := d.Params["sslmode"]; !ok {
+			d.Params["sslmode"] = "disable"
+		}
+		p = " "
+		for k, v := range d.Params {
+			p += k + "=" + v + " "
+		}
+		p = p[:len(p)-1]
+	}
 	return p
 }
 
@@ -459,9 +457,9 @@ func GetStore() Store {
 }
 
 // globalCfg.Debug
-func GetDebug() bool {
-	return globalCfg.Debug
-}
+// func GetDebug() bool {
+// 	return globalCfg.Debug
+// }
 
 func GetDomain() string {
 	return globalCfg.Domain
@@ -581,7 +579,7 @@ func (c *Config) ToMap() map[string]string {
 	m["index_url"] = c.IndexUrl
 	// m["site_off"] = strconv.FormatBool(c.SiteOff)
 	m["login_url"] = c.LoginUrl
-	m["debug"] = strconv.FormatBool(c.Debug)
+	// m["debug"] = strconv.FormatBool(c.Debug)
 	// m["env"] = c.Env
 
 	// Logger config
@@ -749,8 +747,8 @@ func (c *Config) Copy() *Config {
 		MiniLogo:  c.MiniLogo,
 		IndexUrl:  c.IndexUrl,
 		LoginUrl:  c.LoginUrl,
-		Debug:     c.Debug,
-		Env:       c.Env,
+		// Debug:     c.Debug,
+		Env: c.Env,
 		// InfoLogPath:                   c.InfoLogPath,
 		// ErrorLogPath:                  c.ErrorLogPath,
 		// AccessLogPath:                 c.AccessLogPath,

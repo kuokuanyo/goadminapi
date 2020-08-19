@@ -254,7 +254,7 @@ func (h *Handler) getMenuInfoPanel(ctx *context.Context, alert template2.HTML) {
 
 	h.HTML(ctx, user, types.Panel{
 		Content:     alert + row,
-		Description: "Menu",
-		Title:       "Menu Manage",
+		Description: "Menu Manage",
+		Title:       "Menu",
 	})
 }

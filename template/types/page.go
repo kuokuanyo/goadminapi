@@ -3,6 +3,7 @@ package types
 import (
 	"bytes"
 	"fmt"
+	"goadminapi/context"
 	"goadminapi/plugins/admin/models"
 	"html/template"
 	"strconv"
@@ -113,6 +114,8 @@ type NewPageParam struct {
 	TmplHeadHTML template.HTML
 	TmplFootJS   template.HTML
 }
+
+type GetPanelInfoFn func(ctx *context.Context) (Panel, error)
 
 // 取得row_data_tmpl並解析模版
 func ParseTableDataTmpl(content interface{}) string {
