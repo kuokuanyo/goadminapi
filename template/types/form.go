@@ -250,13 +250,11 @@ func (f *FormField) fillCustom(src string) string {
 	t, err := t.Parse(src)
 	if err != nil {
 		panic(err)
-		return ""
 	}
 	buf := new(bytes.Buffer)
 	err = t.Execute(buf, f)
 	if err != nil {
 		panic(err)
-		return ""
 	}
 	return buf.String()
 }
@@ -645,7 +643,7 @@ func (f *FormField) isBelongToATable() bool {
 	return f.FatherField != "" && f.FatherFormType.IsTable()
 }
 
-// AddXssJsFilter添加func(value FieldModel) interface{}至參數i.processChains([]FieldFilterFn)
+// AddXssJsFilter 添加func(value FieldModel) interface{}至參數i.processChains([]FieldFilterFn)
 func (f *FormPanel) AddXssJsFilter() *FormPanel {
 	f.processChains = addXssJsFilter(f.processChains)
 	return f

@@ -2,21 +2,20 @@ package auth
 
 import (
 	"encoding/json"
-	"goadminapi/context"
-	"goadminapi/modules/db"
-	"goadminapi/modules/db/dialect"
 	"net/http"
 	"strconv"
 	"time"
 
+	"goadminapi/context"
 	"goadminapi/modules/config"
-
+	"goadminapi/modules/db"
+	"goadminapi/modules/db/dialect"
 	"goadminapi/plugins/admin/modules"
 )
 
+// DBDriver 也是PersistenceDriver(interface)
+// 紀錄session資料表(觀察用戶登入狀態)
 // 使用資料庫當作持久性的驅動程式
-// DBDriver也是PersistenceDriver(interface)
-// 紀錄goadmin_session資料表(觀察用戶登入狀態)
 type DBDriver struct {
 	conn      db.Connection
 	tableName string
@@ -38,7 +37,7 @@ type Config struct {
 	Cookie  string
 }
 
-// 儲存與獲取session資訊
+// PersistenceDriver 儲存與獲取session資訊
 type PersistenceDriver interface {
 	Load(string) (map[string]interface{}, error)
 	Update(sid string, values map[string]interface{}) error
@@ -48,7 +47,7 @@ func (driver *DBDriver) table() *db.SQL {
 	return db.Table(driver.tableName).WithDriver(driver.conn)
 }
 
-// DBDriver也是PersistenceDriver(interface)
+// Load DBDriver也是PersistenceDriver(interface)
 // 尋找資料表中符合參數(sid)的user資料，將資料表values欄位值(ex:{"user_id":1})JSON解碼並回傳values
 func (driver *DBDriver) Load(sid string) (map[string]interface{}, error) {
 	// table取得sql(struct)
@@ -72,7 +71,7 @@ func (driver *DBDriver) Load(sid string) (map[string]interface{}, error) {
 	return values, err
 }
 
-// 刪除超過時間的cookie(session)
+// deleteOverdueSession 刪除超過時間的cookie(session)
 func (driver *DBDriver) deleteOverdueSession() {
 
 	defer func() {
@@ -106,7 +105,7 @@ func (driver *DBDriver) deleteOverdueSession() {
 	}
 }
 
-// 刪除逾時的cookie，尋找符合參數sid的資料，如果沒有符合的資料則將sesValue(處理過後的參數values)與sid加入資料表，如有符合的資料則是更新sesValue的值
+// Update 刪除逾時的cookie，尋找符合參數sid的資料，如果沒有符合的資料則將sesValue(處理過後的參數values)與sid加入資料表，如有符合的資料則是更新sesValue的值
 func (driver *DBDriver) Update(sid string, values map[string]interface{}) error {
 	// deleteOverdueSession刪除超過時間的cookie(session)
 	go driver.deleteOverdueSession()
@@ -158,7 +157,7 @@ func (driver *DBDriver) Update(sid string, values map[string]interface{}) error 
 	return nil
 }
 
-// 將參數(conn)設置並回傳DBDriver(struct)
+// newDBDriver 將參數(conn)設置至DBDriver(struct)
 func newDBDriver(conn db.Connection) *DBDriver {
 	return &DBDriver{
 		conn: conn,
@@ -167,7 +166,7 @@ func newDBDriver(conn db.Connection) *DBDriver {
 	}
 }
 
-// 設置Session(struct)資訊並取得cookie及設置cookie值
+// InitSession 設置Session(struct)資訊並取得cookie及設置cookie值
 func InitSession(ctx *context.Context, conn db.Connection) (*Session, error) {
 
 	sessions := new(Session)
@@ -186,18 +185,18 @@ func InitSession(ctx *context.Context, conn db.Connection) (*Session, error) {
 	return sessions.StartCtx(ctx)
 }
 
-// 透過參數(driver)設置Session.Driver
+// UseDriver 透過參數(driver)設置Session.Driver
 func (ses *Session) UseDriver(driver PersistenceDriver) {
 	ses.Driver = driver
 }
 
-// 更新Session(struct)的Expires(時間)與Cookie
+// UpdateConfig 更新Session(struct)的Expires(時間)與Cookie
 func (ses *Session) UpdateConfig(config Config) {
 	ses.Expires = config.Expires
 	ses.Cookie = config.Cookie
 }
 
-// 尋找資料表中符合參數(sesKey)的user資料，回傳user_id
+// GetSessionByKey 尋找資料表中符合參數(sesKey)的user資料，回傳user_id
 func GetSessionByKey(sesKey, key string, conn db.Connection) (interface{}, error) {
 	// newDBDriver將參數(conn)設置並回傳DBDriver(struct)
 	// 尋找資料表中符合參數(sesKey)的user資料，將資料表values欄位值(ex:{"user_id":1})JSON解碼並回傳values
@@ -205,7 +204,7 @@ func GetSessionByKey(sesKey, key string, conn db.Connection) (interface{}, error
 	return m[key], err
 }
 
-// 取得cookie並設置值，接著設定Session(struct)資訊，將參數ctx設置至Session.Context
+// StartCtx 取得cookie並設置值，接著設定Session(struct)資訊，將參數ctx設置至Session.Context
 func (ses *Session) StartCtx(ctx *context.Context) (*Session, error) {
 	if cookie, err := ctx.Request.Cookie(ses.Cookie); err == nil && cookie.Value != "" {
 		ses.Sid = cookie.Value
@@ -225,12 +224,12 @@ func (ses *Session) StartCtx(ctx *context.Context) (*Session, error) {
 	return ses, nil
 }
 
-// 藉由參數(key)取得Session.Values[key]
+// Get 藉由參數(key)取得Session.Values[key]
 func (ses *Session) Get(key string) interface{} {
 	return ses.Values[key]
 }
 
-// 將參數key、value加入Session.Values後檢查是否有符合Session.Sid的資料，判斷插入或是更新資料
+// Add 將參數key、value加入Session.Values後檢查是否有符合Session.Sid的資料，判斷插入或是更新資料
 // 最後設置cookie(struct)並儲存在response header Set-Cookie中
 func (ses *Session) Add(key string, value interface{}) error {
 	ses.Values[key] = value
@@ -260,7 +259,7 @@ func (ses *Session) Add(key string, value interface{}) error {
 	return nil
 }
 
-// 清除cookie(session)
+// Clear 清除cookie(session)
 func (ses *Session) Clear() error {
 	ses.Values = map[string]interface{}{}
 	return ses.Driver.Update(ses.Sid, ses.Values)

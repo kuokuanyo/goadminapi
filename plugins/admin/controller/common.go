@@ -75,6 +75,7 @@ func (h *Handler) Execute(ctx *context.Context, user models.UserModel, panel typ
 	})
 }
 
+// AddNavButton 將參數設置至Handler.navButtons
 func (h *Handler) AddNavButton(btns *types.Buttons) {
 	h.navButtons = btns
 	for _, btn := range *btns {
@@ -105,12 +106,12 @@ func aTemplate() template.Template {
 	return template.Get(c.GetTheme())
 }
 
-// 將參數(r)設置至Handler.routes
+// SetRoutes 將路徑及method設置至Handler.routes
 func (h *Handler) SetRoutes(r context.RouterMap) {
 	h.routes = r
 }
 
-// 將參數cfg(struct)裡的值都設置至Handler(struct)
+// UpdateCfg 將參數cfg(struct)裡的值都設置至Handler(struct)
 func (h *Handler) UpdateCfg(cfg Config) {
 	h.config = cfg.Config
 	h.services = cfg.Services

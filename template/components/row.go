@@ -13,6 +13,7 @@ type RowAttribute struct {
 }
 
 // -----------------------types.RowAttribute(interface)所有方法------------------
+
 func (compo *RowAttribute) SetContent(value template.HTML) types.RowAttribute {
 	compo.Content = value
 	return compo

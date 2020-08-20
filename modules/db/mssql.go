@@ -3,10 +3,11 @@ package db
 import (
 	"database/sql"
 	"fmt"
-	"goadminapi/modules/config"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"goadminapi/modules/config"
 )
 
 // Mssql is a Connection of mssql.
@@ -14,6 +15,7 @@ type Mssql struct {
 	Base
 }
 
+// GetMssqlDB get Mssql(struct)
 func GetMssqlDB() *Mssql {
 	return &Mssql{
 		Base: Base{
@@ -22,6 +24,7 @@ func GetMssqlDB() *Mssql {
 	}
 }
 
+// GetDelimiter 取得mssql分隔符號
 func (db *Mssql) GetDelimiter() string {
 	return "["
 }
@@ -88,6 +91,7 @@ func matchString(pattern string, src string) ([]string, error) {
 	return r.FindStringSubmatch(src), nil
 }
 
+// handleSqlBeforeExec 處理mssql字串
 func (db *Mssql) handleSqlBeforeExec(query string) string {
 	index := 0
 	str, _ := replaceStringFunc("\\?", query, func(s string) string {
@@ -100,6 +104,7 @@ func (db *Mssql) handleSqlBeforeExec(query string) string {
 	return db.parseSql(str)
 }
 
+// parseSql 處理mssql字串
 func (db *Mssql) parseSql(sql string) string {
 
 	patten := `^\s*(?i)(SELECT)|(LIMIT\s*(\d+)\s*,\s*(\d+))`
@@ -214,6 +219,7 @@ func (db *Mssql) InitDB(cfglist map[string]config.Database) Connection {
 }
 
 // -------------connection(interface)的所有方法--------------------------
+
 // Query implements the method Connection.Query.
 func (db *Mssql) Query(query string, args ...interface{}) ([]map[string]interface{}, error) {
 	query = db.handleSqlBeforeExec(query)

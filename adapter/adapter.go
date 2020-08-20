@@ -2,6 +2,8 @@ package adapter
 
 import (
 	"bytes"
+	"net/url"
+
 	"goadminapi/context"
 	"goadminapi/modules/auth"
 	"goadminapi/modules/config"
@@ -11,10 +13,9 @@ import (
 	"goadminapi/plugins/admin/models"
 	"goadminapi/template"
 	"goadminapi/template/types"
-	"net/url"
 )
 
-// WebFrameWork功能都設定在框架中(使用/adapter/gin/gin.go框架)
+// WebFrameWork 功能都設定在框架中(使用/adapter/gin/gin.go框架)
 type WebFrameWork interface {
 	// 回傳使用的web框架名稱
 	Name() string
@@ -56,35 +57,36 @@ type WebFrameWork interface {
 	HTMLContentType() string
 }
 
-// BaseAdapter是db.Connection(interface)
+// BaseAdapter 是db.Connection(interface)
 type BaseAdapter struct {
 	db db.Connection
 }
 
-// 將參數(conn)設置至BaseAdapter.db
+// SetConnection 將參數(conn)設置至BaseAdapter.db
 func (base *BaseAdapter) SetConnection(conn db.Connection) {
 	base.db = conn
 }
 
-// 回傳BaseAdapter.db
+// GetConnection 回傳BaseAdapter.db
 func (base *BaseAdapter) GetConnection() db.Connection {
 	return base.db
 }
 
+// CookieKey return "session"
 func (base *BaseAdapter) CookieKey() string {
 	return "session"
 }
 
-// 取得"text/html; charset=utf-8"
+// HTMLContentType return "text/html; charset=utf-8"
 func (base *BaseAdapter) HTMLContentType() string {
 	return "text/html; charset=utf-8"
 }
 
-// 首先將參數(app)轉換成gin.Engine(/gin-gonic/gin套件)型態設置至Gin.app
+// GetUse 首先將參數(app)轉換成gin.Engine(/gin-gonic/gin套件)型態設置至Gin.app
 // 接著對參數(plugin []plugins.Plugin)執行迴圈，設置Context(struct)並增加handlers、處理url及寫入header
-// -------wf參數應該會放Gin(struct)------------
+// -------wf參數是Gin(struct)------------
 func (base *BaseAdapter) GetUse(app interface{}, plugin []plugins.Plugin, wf WebFrameWork) error {
-	// 將參數(app)轉換成gin.Engine(/gin-gonic/gin套件)型態設置至Gin.app
+	// 將參數轉換成gin.Engine(/gin-gonic/gin套件)型態設置至Gin.app
 	if err := wf.SetApp(app); err != nil {
 		return err
 	}
@@ -100,8 +102,8 @@ func (base *BaseAdapter) GetUse(app interface{}, plugin []plugins.Plugin, wf Web
 	return nil
 }
 
-// 透過參數取得cookie後，利用cookie取得用戶角色、權限以及可用menu，最後將UserModel.Conn = nil後回傳UserModel
-// -------wf參數應該會放Gin(struct)------------
+// GetUser 透過參數取得cookie後，利用cookie取得用戶角色、權限以及可用menu，最後將UserModel.Conn = nil後回傳UserModel
+// -------wf參數是Gin(struct)------------
 func (base *BaseAdapter) GetUser(ctx interface{}, wf WebFrameWork) (models.UserModel, bool) {
 	// SetContext將參數(ctx)轉換成gin.Context(gin-gonic/gin套件)類別Gin.ctx(struct)
 	// 取得cookie
@@ -117,14 +119,14 @@ func (base *BaseAdapter) GetUser(ctx interface{}, wf WebFrameWork) (models.UserM
 	return user.ReleaseConn(), exist
 }
 
-// 利用cookie驗證使用者，取得role、permission、menu，接著檢查權限，執行模板並導入HTML
-// -------wf參數應該會放Gin(struct)------------
+// GetContent 利用cookie驗證使用者，取得role、permission、menu，接著檢查權限，執行模板並導入HTML
+// -------wf參數是Gin(struct)------------
 func (base *BaseAdapter) GetContent(ctx interface{}, getPanelFn types.GetPanelFn, wf WebFrameWork,
 	navButtons types.Buttons, fn context.NodeProcessor) {
 
 	var (
 		// 將參數(ctx)轉換成gin.Context(gin-gonic/gin套件)類別Gin.ctx(struct)
-		// -------wf參數應該會放Gin(struct)------------
+		// -------wf參數是Gin(struct)------------
 		newBase = wf.SetContext(ctx)
 		// 取得session裡設置的cookie
 		cookie, hasError = newBase.GetCookie()
@@ -142,7 +144,6 @@ func (base *BaseAdapter) GetContent(ctx interface{}, getPanelFn types.GetPanelFn
 		return
 	}
 
-	// -----------------------------------------
 	var (
 		panel types.Panel
 		err   error

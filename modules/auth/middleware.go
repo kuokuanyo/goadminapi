@@ -1,17 +1,17 @@
 package auth
 
 import (
+	"net/http"
+	"net/url"
+
 	"goadminapi/context"
 	"goadminapi/modules/config"
 	"goadminapi/modules/db"
 	"goadminapi/modules/errors"
 	"goadminapi/modules/page"
 	"goadminapi/plugins/admin/models"
-	"goadminapi/template/types"
-	"net/http"
-	"net/url"
-
 	template2 "goadminapi/template"
+	"goadminapi/template/types"
 )
 
 // MiddlewareCallback is type of callback function.
@@ -94,7 +94,7 @@ func DefaultInvoker(conn db.Connection) *Invoker {
 	}
 }
 
-// 透過參數ctx取得UserModel，並且取得該user的role、權限與可用menu，最後檢查用戶權限
+// Filter 透過參數ctx取得UserModel，並且取得該user的role、權限與可用menu，最後檢查用戶權限
 func Filter(ctx *context.Context, conn db.Connection) (models.UserModel, bool, bool) {
 	var (
 		id   float64
@@ -124,7 +124,7 @@ func Filter(ctx *context.Context, conn db.Connection) (models.UserModel, bool, b
 	return user, true, CheckPermissions(user, ctx.Request.URL.String(), ctx.Method(), ctx.PostForm())
 }
 
-// 透過參數ctx取得UserModel，並且取得該user的role、權限與可用menu，最後檢查用戶權限
+// Middleware 透過參數ctx取得UserModel，並且取得該user的role、權限與可用menu，最後檢查用戶權限
 func (invoker *Invoker) Middleware() context.Handler {
 	return func(ctx *context.Context) {
 		// 透過參數ctx取得UserModel，並且取得該user的role、權限與可用menu，最後檢查用戶權限
@@ -149,12 +149,12 @@ func (invoker *Invoker) Middleware() context.Handler {
 	}
 }
 
-// 建立Invoker(Struct)並透過參數ctx取得UserModel，並且取得該user的role、權限與可用menu，最後檢查用戶權限
+// Middleware 建立Invoker(Struct)並透過參數ctx取得UserModel，並且取得該user的role、權限與可用menu，最後檢查用戶權限
 func Middleware(conn db.Connection) context.Handler {
 	return DefaultInvoker(conn).Middleware()
 }
 
-// 尋找資料表中符合參數(sesKey)的user資料，回傳user_id值，如果沒有則回傳-1
+// GetUserID 尋找資料表中符合參數(sesKey)的user資料，回傳user_id值，如果沒有則回傳-1
 func GetUserID(sesKey string, conn db.Connection) int64 {
 	// GetSessionByKey尋找資料表中符合參數(sesKey)的user資料，回傳user_id
 	id, err := GetSessionByKey(sesKey, "user_id", conn)
@@ -167,7 +167,7 @@ func GetUserID(sesKey string, conn db.Connection) int64 {
 	return -1
 }
 
-// 透過參數(id)取得role、permission以及可使用menu並回傳UserModel(struct)
+// GetCurUserByID 透過參數(id)取得role、permission以及可使用menu並回傳UserModel(struct)
 func GetCurUserByID(id int64, conn db.Connection) (user models.UserModel, ok bool) {
 	// 透過參數(id)取得UserModel(struct)，將值設置至UserModel
 	user = models.User("users").SetConn(conn).Find(id)
@@ -189,13 +189,14 @@ func GetCurUserByID(id int64, conn db.Connection) (user models.UserModel, ok boo
 	return
 }
 
-// 透過參數sesKey(cookie)取得id並利用id取得該user的role、permission以及可用menu，最後回傳UserModel(struct)
+// GetCurUser 透過參數sesKey(cookie)取得id並利用id取得該user的role、permission以及可用menu，最後回傳UserModel(struct)
 func GetCurUser(sesKey string, conn db.Connection) (user models.UserModel, ok bool) {
 	if sesKey == "" {
 		ok = false
 		return
 	}
-	// 取得user_id(在goadmin_session資料表values欄位)
+	
+	// 取得user_id(在session資料表values欄位)
 	// 尋找資料表中符合參數(sesKey)的user資料，回傳user_id值，如果沒有則回傳-1
 	id := GetUserID(sesKey, conn)
 	if id == -1 {
@@ -206,7 +207,7 @@ func GetCurUser(sesKey string, conn db.Connection) (user models.UserModel, ok bo
 	return GetCurUserByID(id, conn)
 }
 
-// 透過參數檢查用戶權限
+// CheckPermissions 透過參數檢查用戶權限
 func CheckPermissions(user models.UserModel, path, method string, param url.Values) bool {
 	// CheckPermissionByUrlMethod在plugins\admin\models\user.go中
 	return user.CheckPermissionByUrlMethod(path, method, param)

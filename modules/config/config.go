@@ -1,12 +1,13 @@
 package config
 
 import (
-	"goadminapi/modules/utils"
 	"html/template"
 	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
+
+	"goadminapi/modules/utils"
 )
 
 var (
@@ -17,13 +18,14 @@ var (
 	count      uint32
 )
 
-// 頁面動畫
+// PageAnimation 頁面動畫
 type PageAnimation struct {
 	Type     string  `json:"type,omitempty" yaml:"type,omitempty" ini:"type,omitempty"`
 	Duration float32 `json:"duration,omitempty" yaml:"duration,omitempty" ini:"duration,omitempty"`
 	Delay    float32 `json:"delay,omitempty" yaml:"delay,omitempty" ini:"delay,omitempty"`
 }
 
+// Config struct
 type Config struct {
 	// An map supports multi database connection. The first
 	// element of Databases is the default connection. See the
@@ -96,7 +98,6 @@ type Config struct {
 	// Auth user table
 	AuthUserTable string `json:"auth_user_table,omitempty" yaml:"auth_user_table,omitempty" ini:"auth_user_table,omitempty"`
 
-
 	// Color scheme.
 	ColorScheme string `json:"color_scheme,omitempty" yaml:"color_scheme,omitempty" ini:"color_scheme,omitempty"`
 
@@ -114,17 +115,19 @@ type Config struct {
 // DatabaseList is a map of Database.
 type DatabaseList map[string]Database
 
-// 文件上傳引擎
+// FileUploadEngine 文件上傳引擎
 type FileUploadEngine struct {
 	Name   string                 `json:"name,omitempty" yaml:"name,omitempty" ini:"name,omitempty"`
 	Config map[string]interface{} `json:"config,omitempty" yaml:"config,omitempty" ini:"config,omitempty"`
 }
 
+// Store 儲存文件
 type Store struct {
 	Path   string `json:"path,omitempty" yaml:"path,omitempty" ini:"path,omitempty"`
 	Prefix string `json:"prefix,omitempty" yaml:"prefix,omitempty" ini:"prefix,omitempty"`
 }
 
+// Database 資料庫引擎設置
 type Database struct {
 	Host       string            `json:"host,omitempty" yaml:"host,omitempty" ini:"host,omitempty"`
 	Port       string            `json:"port,omitempty" yaml:"port,omitempty" ini:"port,omitempty"`
@@ -282,7 +285,7 @@ func (c *Config) AssertPrefix() string {
 	return c.prefix
 }
 
-// GetIndexURL 處理Config.IndexUrl(登入後導向的url)後回傳
+// GetIndexURL 處理Config.IndexUrl(登入後導向的url)
 func (c *Config) GetIndexURL() string {
 	// 取得Config.IndexUrl(登入後導向的url)
 	index := c.Index()
@@ -293,7 +296,7 @@ func (c *Config) GetIndexURL() string {
 	return c.Prefix() + index
 }
 
-// 將參數suffix(後綴)與Config.prefix(前綴)處理後回傳
+// Url 將參數suffix(後綴)與Config.prefix(前綴)處理
 func (c *Config) Url(suffix string) string {
 	if c.prefix == "/" {
 		return suffix
@@ -304,12 +307,12 @@ func (c *Config) Url(suffix string) string {
 	return c.prefix + suffix
 }
 
-// 判斷Config.Env是否是"prod"
+// IsProductionEnvironment 判斷Config.Env是否是"prod"
 func (c *Config) IsProductionEnvironment() bool {
 	return c.Env == "prod"
 }
 
-// 將url前綴處理後回傳
+// PrefixFixSlash 將url前綴處理
 func (c *Config) PrefixFixSlash() string {
 	if c.UrlPrefix == "/" {
 		return ""
@@ -320,7 +323,7 @@ func (c *Config) PrefixFixSlash() string {
 	return c.UrlPrefix
 }
 
-// 處理URL
+// URL 處理URL
 func (s Store) URL(suffix string) string {
 	if len(suffix) > 4 && suffix[:4] == "http" {
 		return suffix
@@ -349,7 +352,7 @@ func (s Store) URL(suffix string) string {
 	return "/" + s.Prefix + "/" + suffix
 }
 
-// URLRemovePrefix將URL的前綴(ex:/admin)去除
+// URLRemovePrefix 將URL的前綴(ex:/admin)去除
 func (c *Config) URLRemovePrefix(url string) string {
 	if url == c.prefix {
 		return "/"
@@ -360,6 +363,7 @@ func (c *Config) URLRemovePrefix(url string) string {
 	return strings.Replace(url, c.prefix, "", 1)
 }
 
+// ParamStr 處理資料庫引擎字串
 func (d Database) ParamStr() string {
 	p := ""
 	if d.Params == nil {
@@ -401,57 +405,62 @@ func (d Database) ParamStr() string {
 	return p
 }
 
-// globalCfg.prefix
+// Prefix globalCfg.prefix
 func Prefix() string {
 	return globalCfg.prefix
 }
 
-// 處理globalCfg(Config struct).IndexUrl(登入後導向的url)後回傳
+// GetIndexURL 處理globalCfg(Config struct).IndexUrl(登入後導向的url)
 func GetIndexURL() string {
 	return globalCfg.GetIndexURL()
 }
 
+// GetTitle return globalCfg.Title
 func GetTitle() string {
 	return globalCfg.Title
 }
 
+// GetLogo return globalCfg.Logo
 func GetLogo() template.HTML {
 	return globalCfg.Logo
 }
 
+// GetMiniLogo return globalCfg.MiniLogo
 func GetMiniLogo() template.HTML {
 	return globalCfg.MiniLogo
 }
 
-// 將globalCfg.suffix(後綴)與globalCfg.prefix(前綴)處理後回傳
+// Url 將globalCfg.suffix(後綴)與globalCfg.prefix(前綴)
 func Url(suffix string) string {
 	return globalCfg.Url(suffix)
 }
 
-// globalCfg(Config struct).prefix將URL的前綴去除
+// URLRemovePrefix 將globalCfg(Config struct).prefix的URL前綴去除
 func URLRemovePrefix(url string) string {
 	return globalCfg.URLRemovePrefix(url)
 }
 
-// globalCfg.LoginUrl
+// GetLoginUrl return globalCfg.LoginUrl
 func GetLoginUrl() string {
 	return globalCfg.LoginUrl
 }
 
+// AssertPrefix return globalCfg.prefix
 func AssertPrefix() string {
 	return globalCfg.AssertPrefix()
 }
 
-// globalCfg.AssetUrl
+// GetAssetUrl return globalCfg.AssetUrl
 func GetAssetUrl() string {
 	return globalCfg.AssetUrl
 }
 
-// globalCfg.AuthUserTable
+// GetAuthUserTable return globalCfg.AuthUserTable
 func GetAuthUserTable() string {
 	return globalCfg.AuthUserTable
 }
 
+// GetStore return globalCfg.Store
 func GetStore() Store {
 	return globalCfg.Store
 }
@@ -461,19 +470,22 @@ func GetStore() Store {
 // 	return globalCfg.Debug
 // }
 
+// GetDomain return globalCfg.Domain
 func GetDomain() string {
 	return globalCfg.Domain
 }
 
+// GetTheme return globalCfg.Theme
 func GetTheme() string {
 	return globalCfg.Theme
 }
 
+// GetHideVisitorUserCenterEntrance return globalCfg.HideVisitorUserCenterEntrance
 func GetHideVisitorUserCenterEntrance() bool {
 	return globalCfg.HideVisitorUserCenterEntrance
 }
 
-// 將Config.Databases[key].Driver設置至Config.Databases[key]後回傳(迴圈)
+// EraseSens 將Config.Databases[key].Driver設置至Config.Databases[key]後回傳(迴圈)
 func (c *Config) EraseSens() *Config {
 	for key := range c.Databases {
 		c.Databases[key] = Database{
@@ -483,67 +495,77 @@ func (c *Config) EraseSens() *Config {
 	return c
 }
 
-// 複製globalCfg(Config struct)後將Config.Databases[key].Driver設置至Config.Databases[key]後回傳
+// Get 複製globalCfg(Config struct)後將Config.Databases[key].Driver設置至Config.Databases[key]後回傳
 func Get() *Config {
 	return globalCfg.Copy().EraseSens()
 }
 
+// GetNoLimitLoginIP return globalCfg.NoLimitLoginIP
 func GetNoLimitLoginIP() bool {
 	return globalCfg.NoLimitLoginIP
 }
 
+// GetAnimation return globalCfg.Animation
 func GetAnimation() PageAnimation {
 	return globalCfg.Animation
 }
 
+// GetSessionLifeTime return globalCfg.SessionLifeTime
 func GetSessionLifeTime() int {
 	return globalCfg.SessionLifeTime
 }
 
+// GetColorScheme return globalCfg.ColorScheme
 func GetColorScheme() string {
 	return globalCfg.ColorScheme
 }
 
-// 判斷globalCfg(Config).Env是否是"prod"
+// IsProductionEnvironment 判斷globalCfg(Config).Env是否是"prod"
 func IsProductionEnvironment() bool {
 	return globalCfg.IsProductionEnvironment()
 }
 
-// 排除主題元件
+// GetExcludeThemeComponents 排除主題元件
 func GetExcludeThemeComponents() []string {
 	return globalCfg.ExcludeThemeComponents
 }
 
+// GetCustomHeadHtml return globalCfg.CustomHeadHtml
 func GetCustomHeadHtml() template.HTML {
 	return globalCfg.CustomHeadHtml
 }
 
+// GetCustomFootHtml return globalCfg.CustomFootHtml
 func GetCustomFootHtml() template.HTML {
 	return globalCfg.CustomFootHtml
 }
 
+// GetFooterInfo return globalCfg.FooterInfo
 func GetFooterInfo() template.HTML {
 	return globalCfg.FooterInfo
 }
 
+// GetCustom500HTML return globalCfg.Custom500HTML
 func GetCustom500HTML() template.HTML {
 	return globalCfg.Custom500HTML
 }
 
+// GetCustom404HTML return globalCfg.Custom404HTML
 func GetCustom404HTML() template.HTML {
 	return globalCfg.Custom404HTML
 }
 
+// GetCustom403HTML return globalCfg.Custom403HTML
 func GetCustom403HTML() template.HTML {
 	return globalCfg.Custom403HTML
 }
 
-// 將DatabaseList(map[string]Database)JSON編碼
+// JSON 將DatabaseList(map[string]Database)JSON編碼
 func (d DatabaseList) JSON() string {
 	return utils.JSON(d)
 }
 
-// 將Store(struct)JSON編碼
+// JSON 將Store(struct)JSON編碼
 func (s Store) JSON() string {
 	if s.Path == "" && s.Prefix == "" {
 		return ""
@@ -551,21 +573,22 @@ func (s Store) JSON() string {
 	return utils.JSON(s)
 }
 
+// Service struct
 type Service struct {
 	C *Config
 }
 
-// 回傳config(string)
+// Name 回傳config(string)
 func (s *Service) Name() string {
 	return "config"
 }
 
-// 將參數c設置並回傳Service(struct)
+// SrvWithConfig 將參數c設置並回傳Service(struct)
 func SrvWithConfig(c *Config) *Service {
 	return &Service{c}
 }
 
-// 將Config的值設置至map[string]string
+// ToMap 將Config的值設置至map[string]string
 func (c *Config) ToMap() map[string]string {
 	var m = make(map[string]string, 0)
 	m["databases"] = c.Databases.JSON()
@@ -644,7 +667,7 @@ func (c *Config) ToMap() map[string]string {
 	return m
 }
 
-// 將參數m(map[string]string)的值更新至Config(struct)
+// Update 將參數m(map[string]string)的值更新至Config(struct)
 func (c *Config) Update(m map[string]string) error {
 	updateLock.Lock()
 	defer updateLock.Unlock()
@@ -734,6 +757,7 @@ func (c *Config) Update(m map[string]string) error {
 	return nil
 }
 
+// Copy 複製Config(struct)後回傳
 func (c *Config) Copy() *Config {
 	return &Config{
 		Databases: c.Databases.Copy(),

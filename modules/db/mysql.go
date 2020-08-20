@@ -9,11 +9,12 @@ import (
 	"goadminapi/modules/config"
 )
 
+// Mysql struct
 type Mysql struct {
 	Base
 }
 
-// Mysql(struct)也屬於Connection的方法
+// GetMysqlDB Mysql(struct)也屬於Connection的方法
 func GetMysqlDB() *Mysql {
 	return &Mysql{
 		Base: Base{
@@ -22,15 +23,17 @@ func GetMysqlDB() *Mysql {
 	}
 }
 
+// Name return "mysql"
 func (db *Mysql) Name() string {
 	return "mysql"
 }
 
+// GetDelimiter 取得mysql分隔符號
 func (db *Mysql) GetDelimiter() string {
 	return "`"
 }
 
-// 初始化資料庫連線並啟動引擎
+// InitDB 初始化資料庫並啟動引擎
 func (db *Mysql) InitDB(cfgs map[string]config.Database) Connection {
 	db.Once.Do(func() {
 		for conn, cfg := range cfgs {
@@ -60,34 +63,35 @@ func (db *Mysql) InitDB(cfgs map[string]config.Database) Connection {
 }
 
 // -------------connection(interface)的所有方法--------------------------
-// 沒有給定連接(conn)名稱，透過參數查詢db.DbList["default"]資料並回傳
+
+// Query 沒有給定連接(conn)名稱，透過參數查詢db.DbList["default"]資料並回傳
 func (db *Mysql) Query(query string, args ...interface{}) ([]map[string]interface{}, error) {
 	// CommonQuery查詢資料並回傳
 	return CommonQuery(db.DbList["default"], query, args...)
 }
 
-// 沒有給定連接(conn)名稱
+// Exec 沒有給定連接(conn)名稱
 func (db *Mysql) Exec(query string, args ...interface{}) (sql.Result, error) {
 	return CommonExec(db.DbList["default"], query, args...)
 }
 
-// 有給定參數連接(conn)名稱，透過參數con查詢db.DbList[con]資料並回傳
+// QueryWithConnection 有給定參數連接(conn)名稱，透過參數con查詢db.DbList[con]資料並回傳
 func (db *Mysql) QueryWithConnection(con string, query string, args ...interface{}) ([]map[string]interface{}, error) {
 	// CommonQuery查詢資料並回傳
 	return CommonQuery(db.DbList[con], query, args...)
 }
 
-// 有給定連接(conn)名稱，透過參數con執行db.DbList[con]資料並回傳
+// ExecWithConnection 有給定連接(conn)名稱，透過參數con執行db.DbList[con]資料並回傳
 func (db *Mysql) ExecWithConnection(con string, query string, args ...interface{}) (sql.Result, error) {
 	return CommonExec(db.DbList[con], query, args...)
 }
 
-// QueryWithTx是sql.Tx的查詢方法(與CommonQuery一樣)
+// QueryWithTx 是sql.Tx的查詢方法(與CommonQuery一樣)
 func (db *Mysql) QueryWithTx(tx *sql.Tx, query string, args ...interface{}) ([]map[string]interface{}, error) {
 	return CommonQueryWithTx(tx, query, args...)
 }
 
-// QueryWithTx是sql.Tx的執行方法(與CommonExec一樣)
+// QueryWithTx 是sql.Tx的執行方法(與CommonExec一樣)
 func (db *Mysql) ExecWithTx(tx *sql.Tx, query string, args ...interface{}) (sql.Result, error) {
 	return CommonExecWithTx(tx, query, args...)
 }
@@ -99,7 +103,7 @@ func (db *Mysql) BeginTxAndConnection(conn string) *sql.Tx {
 
 // -------------connection(interface)的所有方法--------------------------
 
-// 與CommonQuery一樣(差別在tx執行)
+// CommonQueryWithTx 與CommonQuery一樣(差別在tx執行)
 func CommonQueryWithTx(tx *sql.Tx, query string, args ...interface{}) ([]map[string]interface{}, error) {
 
 	rs, err := tx.Query(query, args...)
@@ -150,7 +154,7 @@ func CommonQueryWithTx(tx *sql.Tx, query string, args ...interface{}) ([]map[str
 	return results, nil
 }
 
-// 與CommonExec一樣(差別在tx執行)
+// CommonExecWithTx 與CommonExec一樣(差別在tx執行)
 func CommonExecWithTx(tx *sql.Tx, query string, args ...interface{}) (sql.Result, error) {
 	rs, err := tx.Exec(query, args...)
 	if err != nil {
@@ -159,7 +163,7 @@ func CommonExecWithTx(tx *sql.Tx, query string, args ...interface{}) (sql.Result
 	return rs, nil
 }
 
-// 查詢資料並回傳
+// CommonQuery 查詢資料並回傳
 func CommonQuery(db *sql.DB, query string, args ...interface{}) ([]map[string]interface{}, error) {
 
 	//查詢

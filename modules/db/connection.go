@@ -3,12 +3,13 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"strings"
+
 	"goadminapi/modules/config"
 	"goadminapi/modules/service"
-	"strings"
 )
 
-// 資料庫連接的處理程序
+// Connection 資料庫連接的處理程序
 // Connection也屬於Service(interface)
 type Connection interface {
 	// 查詢
@@ -52,7 +53,7 @@ type Connection interface {
 	// BeginTxWithLevelAndConnection(conn string, level sql.IsolationLevel) *sql.Tx
 }
 
-// 藉由參數(driver = mysql、mssql...)取得Connection(interface)
+// GetConnectionByDriver 藉由參數(driver = mysql、mssql...)取得Connection(interface)
 func GetConnectionByDriver(driver string) Connection {
 	switch driver {
 	case "mysql":
@@ -70,7 +71,7 @@ func GetConnectionByDriver(driver string) Connection {
 	}
 }
 
-// 將參數srv轉換為Connection(interface)回傳並回傳
+// GetConnectionFromService 將參數srv轉換為Connection(interface)回傳並回傳
 func GetConnectionFromService(srv interface{}) Connection {
 	if v, ok := srv.(Connection); ok {
 		return v
@@ -110,7 +111,7 @@ var ignoreErrors = [...][]string{
 	},
 }
 
-// 檢查是否有錯誤
+// CheckError 檢查是否有錯誤
 func CheckError(err error, t int) bool {
 	if err == nil {
 		return false
@@ -123,7 +124,7 @@ func CheckError(err error, t int) bool {
 	return true
 }
 
-// 透過資料庫引擎取得匹配的Service然後轉換成Connection(interface)類別
+// GetConnection 透過資料庫引擎取得匹配的Service然後轉換成Connection(interface)類別
 func GetConnection(srvs service.List) Connection {
 	// service.List類別為map[string]Service，Service是interface(Name方法)
 	// 將所有globalCfg.Databases[key]的driver值設置至DatabaseList(map[string]Database).Database.Driver後回傳
@@ -135,7 +136,7 @@ func GetConnection(srvs service.List) Connection {
 	panic("wrong service")
 }
 
-// 取得資料庫引擎的Aggregation表達式，將參數值加入表達式
+// GetAggregationExpression 取得資料庫引擎的Aggregation表達式，將參數值加入表達式
 func GetAggregationExpression(driver, field, headField, delimiter string) string {
 	switch driver {
 	// case "postgresql":

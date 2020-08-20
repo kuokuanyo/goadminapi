@@ -1,7 +1,6 @@
 package errors
 
 import (
-
 	"html/template"
 )
 
@@ -21,10 +20,12 @@ const (
 	SiteOff              = "site is off"
 )
 
+// WrongPK return "wrong " + 參數
 func WrongPK(pk string) string {
 	return "wrong " + pk
 }
 
+// Init 初始化
 func Init() {
 	Msg = "error"
 	MsgHTML = template.HTML("error")

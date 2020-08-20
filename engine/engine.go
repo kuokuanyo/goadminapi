@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"goadminapi/adapter"
 	"goadminapi/modules/config"
 	"goadminapi/modules/db"
 	"goadminapi/modules/service"
@@ -9,15 +10,13 @@ import (
 	"goadminapi/plugins/admin"
 	"goadminapi/plugins/admin/models"
 	"goadminapi/template/types"
-
-	"goadminapi/adapter"
 )
 
 var defaultAdapter adapter.WebFrameWork
 var engine *Engine
 var navButtons = new(types.Buttons)
 
-// 核心組件，有PluginList及Adapter兩個屬性
+// Engine 核心組件，有PluginList及Adapter兩個屬性
 type Engine struct {
 	PluginList []plugins.Plugin
 	Adapter    adapter.WebFrameWork
@@ -26,7 +25,7 @@ type Engine struct {
 	config     *config.Config
 }
 
-// 建立引擎預設的配適器
+// Register 建立引擎預設的配適器
 func Register(ada adapter.WebFrameWork) {
 	if ada == nil {
 		panic("adapter is nil")
@@ -34,7 +33,7 @@ func Register(ada adapter.WebFrameWork) {
 	defaultAdapter = ada
 }
 
-// 回傳預設的Engine(struct)
+// Default 設定預設Engine(struct)
 func Default() *Engine {
 	engine = &Engine{
 		Adapter:    defaultAdapter,
@@ -44,14 +43,14 @@ func Default() *Engine {
 	return engine
 }
 
-// 透過參數(driver)找到匹配的Service(interface)後回傳Connection(interface)型態
+// DB 透過參數(driver)找到匹配的Service(interface)後轉換成Connection(interface)型態
 func (eng *Engine) DB(driver string) db.Connection {
 	// GetConnectionFromService將參數型態轉換成Connection(interface)後回傳
 	// Get藉由參數(driver)取得匹配的Service(interface)
 	return db.GetConnectionFromService(eng.Services.Get(driver))
 }
 
-// 透過資料庫引擎(driver)回傳預設的Connection(interface)
+// DefaultConnection 透過資料庫引擎(driver)回傳預設的Connection(interface)
 func (eng *Engine) DefaultConnection() db.Connection {
 	// GetDefault() = DatabaseList["default"]
 	// 參數為DatabaseList["default"].driver
@@ -62,11 +61,10 @@ func (eng *Engine) DefaultConnection() db.Connection {
 // Config APIs
 // ============================
 
-// 將參數值處理後設置至全局變數globalCfg，最後設置至Engine.config
+// setConfig 將參數值處理後設置至全局變數globalCfg，最後設置至Engine.config
 // --------此函式處理全局變數globalCfg-------------
 func (eng *Engine) setConfig(cfg config.Config) *Engine {
 	// 設置Config(struct)title、theme、登入url、前綴url...資訊，如果參數cfg(struct)有些數值為空值，設置預設值
-	// 最後回傳globalCfg
 	eng.config = config.Set(cfg)
 
 	//------------------------------------------------------------------------------------------------
@@ -85,14 +83,14 @@ func (eng *Engine) setConfig(cfg config.Config) *Engine {
 	return eng
 }
 
-// 將driver加入Engine.Services，初始化所有資料庫連線並啟動引擎
+// InitDatabase 將driver加入Engine.Services，初始化所有資料庫並啟動引擎
 func (eng *Engine) InitDatabase() *Engine {
 	// GroupByDriver將資料庫依照資料庫引擎分組(ex:mysql一組mssql一組)
 	// driver = mysql、mssql等引擎名稱
 	for driver, databaseCfg := range eng.config.Databases.GroupByDriver() {
 		// Add藉由參數新增List(map[string]Service)，在List加入引擎(driver)
-		// GetConnectionByDriver藉由參數(driver = mysql、mssql...)取得Connection(interface)及struct
-		// InitDB初始化資料庫連線並啟動引擎
+		// GetConnectionByDriver藉由參數(driver = mysql、mssql...)取得Connection(interface)
+		// InitDB初始化資料庫並啟動引擎
 		eng.Services.Add(driver, db.GetConnectionByDriver(driver).InitDB(databaseCfg))
 	}
 	if defaultAdapter == nil {
@@ -101,15 +99,15 @@ func (eng *Engine) InitDatabase() *Engine {
 	return eng
 }
 
-// 首先將參數cfg(struct)數值處理後設置至globalCfg，接著設置至Engine.config
-// 再來將driver加入Engine.Services，初始化所有資料庫連線並啟動引擎
+// AddConfig 首先將參數cfg(struct)數值處理後設置至globalCfg，接著設置至Engine.config
+// 最後將資料庫引擎加入Engine.Services，初始化所有資料庫連線並啟動引擎
 func (eng *Engine) AddConfig(cfg config.Config) *Engine {
 	// setConfig將參數cfg(struct)數值處理後設置至globalCfg，最後設置至Engine.config
 	// InitDatabase將driver加入Engine.Services，初始化所有資料庫連線並啟動引擎
 	return eng.setConfig(cfg).InitDatabase()
 }
 
-// 在PluginList([]plugins.Plugin)的迴圈中尋找與參數(name)符合的plugin，如果有回傳Plugin,true，反之nil, false
+// FindPluginByName 在PluginList([]plugins.Plugin)的迴圈中尋找與參數(name)符合的plugin，如果有回傳Plugin,true，反之nil, false
 func (eng *Engine) FindPluginByName(name string) (plugins.Plugin, bool) {
 	for _, plug := range eng.PluginList {
 		if plug.Name() == name {
@@ -119,7 +117,7 @@ func (eng *Engine) FindPluginByName(name string) (plugins.Plugin, bool) {
 	return nil, false
 }
 
-// 尋找符合的plugin，接著設置context.Context(struct)與設置url與寫入header，取得新的request與middleware
+// Use 尋找符合的plugin，接著設置context.Context(struct)與設置url與寫入header，取得新的request與middleware
 func (eng *Engine) Use(router interface{}) error {
 	if eng.Adapter == nil {
 		panic("adapter is nil, import the default adapter or use AddAdapter method add the adapter")

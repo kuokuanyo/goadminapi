@@ -26,7 +26,7 @@ func NewAdmin(tableCfg ...table.GeneratorList) *Admin {
 	return &Admin{
 		tableList: make(table.GeneratorList).CombineAll(tableCfg),
 		Base:      &plugins.Base{PlugName: "admin"},
-		handler: controller.New(),
+		handler:   controller.New(),
 	}
 }
 
@@ -75,7 +75,7 @@ func (admin *Admin) InitPlugin(services service.List) {
 	// ***************放置api的地方*****************
 	admin.initRouter()
 
-	// 將參數(admin.App.Routers)設置至Handler.routes
+	// 將路徑及method設置至Handler.routes
 	admin.handler.SetRoutes(admin.App.Routers)
 
 	admin.handler.AddNavButton(admin.UI.NavButtons)

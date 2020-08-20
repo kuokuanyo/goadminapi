@@ -95,7 +95,7 @@ func (g GeneratorList) Add(key string, gen Generator) {
 	g[key] = gen
 }
 
-// 透過參數list判斷GeneratorList已經有該key、value，如果不存在則加入該鍵與值
+// Combine 透過參數list判斷GeneratorList已經有該key、value，如果不存在則加入該鍵與值
 func (g GeneratorList) Combine(list GeneratorList) GeneratorList {
 	for key, gen := range list {
 		if _, ok := g[key]; !ok {
@@ -117,7 +117,7 @@ func (g GeneratorList) CombineAll(gens []GeneratorList) GeneratorList {
 	return g
 }
 
-// 將參數(srv)設置給services(map[string]Service)
+// 將參數(srv)設置給services(map[string]Service)，services是套件中的全域變數
 func SetServices(srv service.List) {
 	lock.Lock()
 	defer lock.Unlock()

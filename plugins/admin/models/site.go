@@ -26,17 +26,18 @@ type SiteModel struct {
 	UpdatedAt string
 }
 
-// 設置SiteModel(struct)後回傳
+// Site 設置SiteModel(struct)
 func Site() SiteModel {
 	return SiteModel{Base: Base{TableName: "site"}}
 }
 
-// 將參數(con)設置至SiteModel.Conn後回傳
+// SetConn 將參數(con)設置至SiteModel.Conn
 func (t SiteModel) SetConn(con db.Connection) SiteModel {
 	t.Conn = con
 	return t
 }
 
+// Init 插入或更新site資料表資料(紀錄config)
 func (t SiteModel) Init(cfg map[string]string) {
 	items, err := t.Table(t.TableName).All()
 	if db.CheckError(err, db.QUERY) {
@@ -69,8 +70,8 @@ func (t SiteModel) Init(cfg map[string]string) {
 	}
 }
 
+// AllToMap return map[string]string
 func (t SiteModel) AllToMap() map[string]string {
-
 	var m = make(map[string]string, 0)
 
 	items, err := t.Table(t.TableName).Where("state", "=", SiteItemOpenState).All()

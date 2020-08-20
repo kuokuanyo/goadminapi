@@ -2,7 +2,7 @@ package db
 
 import "fmt"
 
-// 資料型態
+// DatabaseType 資料型態
 type DatabaseType string
 
 // Value is a string.
@@ -142,7 +142,7 @@ var (
 	UintTypeList = []DatabaseType{Decimal, Bit, Money, Numeric}
 )
 
-// 判斷條件後取得Value(string)
+// GetValueFromDatabaseType 判斷條件後取得Value(string)
 func GetValueFromDatabaseType(typ DatabaseType, value interface{}, json bool) Value {
 	if json {
 		return GetValueFromJSONOfDatabaseType(typ, value)
@@ -151,6 +151,7 @@ func GetValueFromDatabaseType(typ DatabaseType, value interface{}, json bool) Va
 	}
 }
 
+// DT return DatabaseType(string)
 func DT(s string) DatabaseType {
 	return DatabaseType(s)
 }
@@ -165,7 +166,7 @@ func Contains(v DatabaseType, a []DatabaseType) bool {
 	return false
 }
 
-// 判斷數值類型並取得數值
+// GetValueFromJSONOfDatabaseType 判斷數值類型並取得數值
 func GetValueFromJSONOfDatabaseType(typ DatabaseType, value interface{}) Value {
 	switch {
 	case Contains(typ, StringTypeList):
@@ -204,7 +205,7 @@ func GetValueFromJSONOfDatabaseType(typ DatabaseType, value interface{}) Value {
 	panic("wrong type?" + string(typ))
 }
 
-// 判斷數值類型並取得數值
+// GetValueFromSQLOfDatabaseType 判斷數值類型並取得數值
 func GetValueFromSQLOfDatabaseType(typ DatabaseType, value interface{}) Value {
 	switch {
 	case Contains(typ, StringTypeList):

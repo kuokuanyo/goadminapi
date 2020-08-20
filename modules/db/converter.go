@@ -2,7 +2,7 @@ package db
 
 import "database/sql"
 
-// 設置欄位類型
+// SetColVarType 設置欄位類型
 func SetColVarType(colVar *[]interface{}, i int, typeName string) {
 	//判別欄位數值類別
 	switch {
@@ -28,7 +28,7 @@ func SetColVarType(colVar *[]interface{}, i int, typeName string) {
 	}
 }
 
-// 設置數值
+// SetResultValue 設置數值
 func SetResultValue(result *map[string]interface{}, index string, colVar interface{}, typeName string) {
 	switch {
 	case Contains(DT(typeName), BoolTypeList):

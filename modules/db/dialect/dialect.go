@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// Dialect 處理資料庫CRUD
 type Dialect interface {
 	// GetName get dialect's name
 	GetName() string
@@ -76,7 +77,7 @@ type RawUpdate struct {
 	Args       []interface{}
 }
 
-// 不同資料庫引擎有不同使用符號
+// GetDialectByDriver 不同資料庫引擎有不同使用符號
 func GetDialectByDriver(driver string) Dialect {
 	switch driver {
 	case "mysql":
@@ -100,7 +101,7 @@ func GetDialectByDriver(driver string) Dialect {
 	}
 }
 
-// 處理選擇欄位語法，ex:select *...
+// wrap 處理選擇欄位語法，ex:select *...
 func wrap(delimiter, field string) string {
 	if field == "*" {
 		return "*"
@@ -116,7 +117,7 @@ func wrap(delimiter, field string) string {
 // sql 相關語法
 // *******************************
 
-// 插入數值語法
+// prepareInsert 插入數值語法
 func (sql *SQLComponent) prepareInsert(delimiter string) {
 	fields := " ("
 	quesMark := "("
@@ -132,7 +133,7 @@ func (sql *SQLComponent) prepareInsert(delimiter string) {
 	sql.Statement = "insert into " + sql.TableName + fields + " values " + quesMark
 }
 
-// update語法
+// prepareUpdate update語法
 func (sql *SQLComponent) prepareUpdate(delimiter string) {
 	fields := ""
 	args := make([]interface{}, 0)
@@ -177,7 +178,7 @@ func (sql *SQLComponent) prepareUpdate(delimiter string) {
 	sql.Statement = "update " + sql.TableName + " set " + fields + sql.getWheres(delimiter)
 }
 
-// 取得特定欄位
+// getFields 取得特定欄位
 func (sql *SQLComponent) getFields(delimiter string) string {
 	if len(sql.Fields) == 0 {
 		return "*"
@@ -204,7 +205,7 @@ func (sql *SQLComponent) getFields(delimiter string) string {
 	return fields[:len(fields)-1]
 }
 
-// where = ...
+// getWheres where = ...
 func (sql *SQLComponent) getWheres(delimiter string) string {
 	if len(sql.Wheres) == 0 {
 		if sql.WhereRaws != "" {
@@ -230,7 +231,7 @@ func (sql *SQLComponent) getWheres(delimiter string) string {
 	return wheres[:len(wheres)-5]
 }
 
-// join其他表
+// getJoins join其他表
 func (sql *SQLComponent) getJoins(delimiter string) string {
 	if len(sql.Leftjoins) == 0 {
 		return ""
@@ -242,7 +243,7 @@ func (sql *SQLComponent) getJoins(delimiter string) string {
 	return joins
 }
 
-// 分組
+// getGroupBy 分組
 func (sql *SQLComponent) getGroupBy() string {
 	if sql.Group == "" {
 		return ""
@@ -250,7 +251,7 @@ func (sql *SQLComponent) getGroupBy() string {
 	return " group by " + sql.Group + " "
 }
 
-// 排列順序
+// getOrderBy 排列順序
 func (sql *SQLComponent) getOrderBy() string {
 	if sql.Order == "" {
 		return ""
@@ -258,7 +259,7 @@ func (sql *SQLComponent) getOrderBy() string {
 	return " order by " + sql.Order + " "
 }
 
-// 顯示資料數
+// getLimit 顯示資料數
 func (sql *SQLComponent) getLimit() string {
 	if sql.Limit == "" {
 		return ""
@@ -266,7 +267,7 @@ func (sql *SQLComponent) getLimit() string {
 	return " limit " + sql.Limit + " "
 }
 
-// 跳過前面幾筆資料
+// getOffset 跳過前面幾筆資料
 func (sql *SQLComponent) getOffset() string {
 	if sql.Offset == "" {
 		return ""

@@ -57,6 +57,7 @@ func (s Style) String() template.HTML {
 	return template.HTML(res)
 }
 
+// String return HTML
 func (s Attribute) String() template.HTML {
 	res := ""
 	for k, v := range s {
@@ -68,6 +69,7 @@ func (s Attribute) String() template.HTML {
 	return template.HTML(res)
 }
 
+// SetStyleAndAttr return Element(struct)
 func (b Element) SetStyleAndAttr(ms []M) Element {
 	if len(ms) > 0 {
 		for k, v := range ms[0] {
@@ -82,14 +84,17 @@ func (b Element) SetStyleAndAttr(ms []M) Element {
 	return b
 }
 
+// AEl set tag
 func AEl() Element {
 	return BaseEl().SetTag("a")
 }
 
+// LiEl set tag
 func LiEl() Element {
 	return BaseEl().SetTag("li")
 }
 
+// SetClass set class
 func (b Element) SetClass(class ...string) Element {
 	if b.Attribute["class"] != "" {
 		b.Attribute["class"] += " " + strings.Join(class, " ")
@@ -99,27 +104,32 @@ func (b Element) SetClass(class ...string) Element {
 	return b
 }
 
+// DivEl set tag 
 func DivEl() Element {
 	return BaseEl().SetTag("div")
 }
 
+// Div return html
 func Div(content template.HTML, ms ...M) template.HTML {
 	return DivEl().SetContent(content).SetStyleAndAttr(ms).Get()
 }
 
+// UlEl set tag 
 func UlEl() Element {
 	return BaseEl().SetTag("ul")
 }
 
+// Ul return html
 func Ul(content template.HTML, ms ...M) template.HTML {
 	return UlEl().SetContent(content).SetStyleAndAttr(ms).Get()
 }
 
+// A return html
 func A(content template.HTML, ms ...M) template.HTML {
 	return AEl().SetContent(content).SetStyleAndAttr(ms).Get()
 }
 
+// IEl set tag
 func IEl() Element {
 	return BaseEl().SetTag("i")
 }
-

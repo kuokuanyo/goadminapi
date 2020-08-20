@@ -3,20 +3,19 @@ package gin
 import (
 	"bytes"
 	"errors"
-	"goadminapi/adapter"
-	"goadminapi/engine"
-	"goadminapi/plugins"
-	"goadminapi/plugins/admin/models"
-	"goadminapi/template/types"
 	"net/http"
 	"net/url"
 	"strings"
 
-	"goadminapi/context"
-
-	"goadminapi/modules/config"
-
 	"github.com/gin-gonic/gin"
+
+	"goadminapi/adapter"
+	"goadminapi/context"
+	"goadminapi/engine"
+	"goadminapi/modules/config"
+	"goadminapi/plugins"
+	"goadminapi/plugins/admin/models"
+	"goadminapi/template/types"
 )
 
 // Gin 同時也符合adapter.WebFrameWork(interface)
@@ -28,9 +27,8 @@ type Gin struct {
 	app *gin.Engine
 }
 
-// 初始化
+// init 建立引擎預設的配適器
 func init() {
-	// 建立引擎預設的配適器
 	engine.Register(new(Gin))
 }
 
@@ -65,6 +63,7 @@ func (gins *Gin) User(ctx interface{}) (models.UserModel, bool) {
 
 // AddHandler 設置Context(struct)並增加handlers、處理url及寫入header
 func (gins *Gin) AddHandler(method, path string, handlers context.Handlers) {
+
 	// Handle第三個參數(主要處理程序)為funcion(*gin.Context)，gin.Context為struct(gin-gonic套件)
 	gins.app.Handle(strings.ToUpper(method), path, func(c *gin.Context) {
 
@@ -100,13 +99,15 @@ func (gins *Gin) AddHandler(method, path string, handlers context.Handlers) {
 }
 
 // DisableLog return panic
-func (gins *Gin) DisableLog()                { panic("not implement") }
+func (gins *Gin) DisableLog() { panic("not implement") }
+
 // Static return panic
 func (gins *Gin) Static(prefix, path string) { panic("not implement") }
-// Run return panic
-func (gins *Gin) Run() error                 { panic("not implement") }
 
-// SetApp 將參數(app)轉換成gin.Engine(gin-gonic/gin套件)型態設置至Gin.app
+// Run return panic
+func (gins *Gin) Run() error { panic("not implement") }
+
+// SetApp 將參數轉換成gin.Engine(gin-gonic/gin套件)型態設置至Gin.app
 func (gins *Gin) SetApp(app interface{}) error {
 	var (
 		eng *gin.Engine
