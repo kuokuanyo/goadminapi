@@ -194,7 +194,7 @@ func SetDefault(cfg Config) Config {
 	cfg.Logo = template.HTML(utils.SetDefault(string(cfg.Logo), "", "<b>晶橙</b>"))
 	cfg.MiniLogo = template.HTML(utils.SetDefault(string(cfg.MiniLogo), "", "<b>晶橙</b>"))
 	cfg.Theme = utils.SetDefault(cfg.Theme, "", "adminlte")
-	cfg.IndexUrl = utils.SetDefault(cfg.IndexUrl, "", "/menu")
+	cfg.IndexUrl = utils.SetDefault(cfg.IndexUrl, "", "/info/manager")
 	cfg.LoginUrl = utils.SetDefault(cfg.LoginUrl, "", "/login")
 	cfg.AuthUserTable = utils.SetDefault(cfg.AuthUserTable, "", "users")
 	if cfg.Theme == "adminlte" {

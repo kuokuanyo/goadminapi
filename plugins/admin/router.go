@@ -27,8 +27,11 @@ func (admin *Admin) initRouter() *Admin {
 		}
 	}
 
+	route.GET("/signup", admin.handler.ShowSignup)
 	route.GET(config.GetLoginUrl(), admin.handler.ShowLogin)
+	route.POST("/signup", admin.handler.Signup)
 	route.POST("/signin", admin.handler.Auth)
+
 	
 
 	authRoute := route.Group("/", auth.Middleware(admin.Conn))

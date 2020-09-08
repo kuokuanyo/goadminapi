@@ -93,23 +93,23 @@ var TemplateList = map[string]string{"403": `<div class="missing-content">
             {{if not .User.HideUserCenterEntrance}}
                 <li class="dropdown user user-menu">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                        {{if eq .User.Avatar ""}}
+                        {{if eq .User.PictureURL ""}}
                             <img src="{{.UrlPrefix}}/assets/dist/img/avatar04.png" class="user-image" alt="User Image">
                         {{else}}
-                            <img src="{{.User.Avatar}}" class="user-image" alt="User Image">
+                            <img src="{{.User.PictureURL}}" class="user-image" alt="User Image">
                         {{end}}
-                        <span class="hidden-xs">{{.User.Name}}</span>
+                        <span class="hidden-xs">{{.User.UserName}}</span>
                     </a>
                     <ul class="dropdown-menu">
                         <li class="user-header">
-                            {{if eq .User.Avatar ""}}
+                            {{if eq .User.PictureURL ""}}
                                 <img src="{{.UrlPrefix}}/assets/dist/img/avatar04.png" class="img-circle"
                                      alt="User Image">
                             {{else}}
-                                <img src="{{.User.Avatar}}" class="img-circle" alt="User Image">
+                                <img src="{{.User.PictureURL}}" class="img-circle" alt="User Image">
                             {{end}}
                             <p>
-                                {{.User.Name}} -{{.User.LevelName}}
+                                {{.User.UserName}} -{{.User.LevelName}}
                             </p>
                         </li>
                         <li class="user-footer">

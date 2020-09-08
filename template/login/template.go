@@ -37,8 +37,8 @@ const loginTmpl = `{{define "login_theme1"}}
                       data-animate-effect="fadeIn">
                     <h2>{{.Title}}</h2>
                     <div class="form-group">
-                        <label for="username" class="sr-only">Username</label>
-                        <input type="text" class="form-control" id="username" placeholder="使用者"
+                        <label for="phone" class="sr-only">phone</label>
+                        <input type="text" class="form-control" id="phone" placeholder="電話號碼"
                                autocomplete="off">
                     </div>
                     <div class="form-group">
@@ -71,14 +71,14 @@ const loginTmpl = `{{define "login_theme1"}}
                 url: '{{.UrlPrefix}}/signin',
                 async: 'true',
                 data: {
-                    'username': $("#username").val(),
+                    'phone': $("#phone").val(),
                     'password': $("#password").val()
                 },
                 success: function (data) {
                     location.href = data.data.url
                 },
                 error: function (data) {
-                    alert('登入失敗');
+                    alert(data.responseJSON.msg);
                 }
             });
         }

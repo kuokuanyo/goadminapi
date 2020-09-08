@@ -15,10 +15,12 @@ import (
 type UserModel struct {
 	Base          `json:"-"`
 	Id            int64             `json:"id"`
-	Name          string            `json:"name"`
+	UserID        string            `json:"UserID"`
 	UserName      string            `json:"user_name"`
+	Phone         string            `json:"phone"`
+	Email         string            `json:"email"`
 	Password      string            `json:"password"`
-	Avatar        string            `json:"avatar"`
+	PictureURL    string            `json:"PictureURL"`
 	RememberToken string            `json:"remember_token"`
 	Permissions   []PermissionModel `json:"permissions"`
 	MenuIds       []int64           `json:"menu_ids"`
@@ -55,9 +57,16 @@ func (t UserModel) Find(id interface{}) UserModel {
 	return t.MapToModel(item)
 }
 
-// 透過參數username尋找符合的資料並設置至UserModel
-func (t UserModel) FindByUserName(username interface{}) UserModel {
-	item, _ := t.Table(t.TableName).Where("username", "=", username).First()
+// 透過參數phone尋找符合的資料並設置至UserModel
+func (t UserModel) FindByPhone(phone interface{}) UserModel {
+	item, _ := t.Table(t.TableName).Where("phone", "=", phone).First()
+
+	return t.MapToModel(item)
+}
+
+// 透過參數userid尋找符合的資料並設置至UserModel
+func (t UserModel) FindByUserid(userid interface{}) UserModel {
+	item, _ := t.Table(t.TableName).Where("userid", "=", userid).First()
 
 	return t.MapToModel(item)
 }
@@ -154,20 +163,24 @@ func (t UserModel) WithPermissions() UserModel {
 }
 
 // New create a user model.
-func (t UserModel) New(username, password, name, avatar string) (UserModel, error) {
+func (t UserModel) New(userid, username, phone, email, password, pictureURL string) (UserModel, error) {
 
 	id, err := t.WithTx(t.Tx).Table(t.TableName).Insert(dialect.H{
-		"username": username,
-		"password": password,
-		"name":     name,
-		"avatar":   avatar,
+		"userid":     userid,
+		"username":   username,
+		"phone":      phone,
+		"email":      email,
+		"password":   password,
+		"pictureURL": pictureURL,
 	})
 
 	t.Id = id
+	t.UserID = userid
 	t.UserName = username
+	t.Phone = phone
+	t.Email = email
 	t.Password = password
-	t.Avatar = avatar
-	t.Name = name
+	t.PictureURL = pictureURL
 
 	return t, err
 }
@@ -462,10 +475,12 @@ func (t UserModel) IsEmpty() bool {
 // 將取得的值(參數m)設置usermodel從map中
 func (t UserModel) MapToModel(m map[string]interface{}) UserModel {
 	t.Id, _ = m["id"].(int64)
-	t.Name, _ = m["name"].(string)
+	t.UserID, _ = m["userid"].(string)
 	t.UserName, _ = m["username"].(string)
+	t.Phone, _ = m["phone"].(string)
+	t.Email, _ = m["email"].(string)
 	t.Password, _ = m["password"].(string)
-	t.Avatar, _ = m["avatar"].(string)
+	t.PictureURL, _ = m["pictureURL"].(string)
 	t.RememberToken, _ = m["remember_token"].(string)
 	t.CreatedAt, _ = m["created_at"].(string)
 	t.UpdatedAt, _ = m["updated_at"].(string)

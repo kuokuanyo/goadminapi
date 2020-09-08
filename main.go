@@ -22,14 +22,14 @@ func main() {
 	cfg := config.Config{
 		Databases: config.DatabaseList{
 			"default": {
-				Host:       "127.0.0.1",
-				Port:       "3306",
-				User:       "root",
-				Pwd:        "asdf4440",
-				Name:       "kuo",
+				Host:       "139.162.53.127",
+				Port:       "1433",
+				User:       "sa",
+				Pwd:        "CCO@test53383499",
+				Name:       "gotest",
 				MaxIdleCon: 50,
 				MaxOpenCon: 150,
-				Driver:     "mysql",
+				Driver:     "mssql",
 			},
 		},
 		UrlPrefix: "admin",

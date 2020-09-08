@@ -384,6 +384,11 @@ func (tb *DefaultTable) InsertData(dataList form.Values) error {
 		errMsg = ""
 	)
 
+	if dataList["userid"] == nil {
+		userid := modules.Uuid()
+		dataList.Add("userid", userid)
+	}
+
 	dataList.Add("__post_type", "1")
 
 	// -------------只有新增權限會執行(權限有設置PostHook)----------------

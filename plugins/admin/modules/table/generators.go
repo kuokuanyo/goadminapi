@@ -67,7 +67,7 @@ func link(url, content string) tmpl.HTML {
 		Get()
 }
 
-func encodePassword(pwd []byte) string {
+func EncodePassword(pwd []byte) string {
 	hash, err := bcrypt.GenerateFromPassword(pwd, bcrypt.DefaultCost)
 	if err != nil {
 		return ""
@@ -94,8 +94,10 @@ func (s *SystemTable) GetManagerTable(ctx *context.Context) (managerTable Table)
 	// FieldDisplay 將參數添加至InfoPanel.FieldList[].Display
 	// ****************用戶名、暱稱、角色皆可以篩選**********************
 	info.AddField("ID", "id", "INT").FieldSortable()
+	info.AddField("userID", "userid", db.Varchar).FieldFilterable()
 	info.AddField("用戶名稱", "username", db.Varchar).FieldFilterable()
-	info.AddField("暱稱", "name", db.Varchar).FieldFilterable()
+	info.AddField("電話", "phone", db.Varchar).FieldFilterable()
+	info.AddField("信箱", "email", db.Varchar).FieldFilterable()
 	// 用戶角色需先與role_user資料表join後再與roles資料表join
 	info.AddField("角色", "name", db.Varchar).
 		FieldJoin(types.Join{
@@ -129,6 +131,7 @@ func (s *SystemTable) GetManagerTable(ctx *context.Context) (managerTable Table)
 
 			return labels
 		}).FieldFilterable()
+	info.AddField("用戶照片", "pictureURL", db.Varchar)
 	info.AddField("建立時間", "created_at", db.Timestamp)
 	info.AddField("更新時間", "updated_at", db.Timestamp)
 
@@ -179,11 +182,10 @@ func (s *SystemTable) GetManagerTable(ctx *context.Context) (managerTable Table)
 	// FieldOptionsFromTable 從資料表設置表單欄位的選項，第二個參數為顯示的選項名稱
 	// FieldDisplay 將參數(函式)添加至FormPanel.FieldList[].Display
 	formList.AddField("ID", "id", "INT", form.Default).FieldNotAllowEdit().FieldNotAllowAdd()
-	formList.AddField("用戶名稱", "username", db.Varchar, form.Text).
+	formList.AddField("使用者名稱", "username", db.Varchar, form.Text).FieldMust()
+	formList.AddField("電話號碼", "phone", db.Varchar, form.Text).
 		FieldHelpMsg(template.HTML("用來登入")).FieldMust()
-	formList.AddField("暱稱", "name", db.Varchar, form.Text).
-		FieldHelpMsg(template.HTML("用來展示")).FieldMust()
-	formList.AddField("頭像", "avatar", db.Varchar, form.File)
+	formList.AddField("信箱", "email", db.Varchar, form.Text).FieldMust()
 	formList.AddField("角色", "role_id", db.Varchar, form.Select).
 		FieldOptionsFromTable("roles", "slug", "id").
 		FieldDisplay(func(model types.FieldModel) interface{} {
@@ -238,7 +240,7 @@ func (s *SystemTable) GetManagerTable(ctx *context.Context) (managerTable Table)
 			if password != values.Get("password_again") {
 				return errors.New("password does not match")
 			}
-			password = encodePassword([]byte(values.Get("password")))
+			password = EncodePassword([]byte(values.Get("password")))
 		}
 
 		// WithTransaction 取得tx(struct)，會持續並行Rollback、commit
@@ -277,8 +279,8 @@ func (s *SystemTable) GetManagerTable(ctx *context.Context) (managerTable Table)
 
 	// 設置新增資料函式
 	formList.SetInsertFn(func(values form2.Values) error {
-		if values.IsEmpty("name", "username", "password") {
-			return errors.New("username and password can not be empty")
+		if values.IsEmpty("username", "password", "email") {
+			return errors.New("username,password and email can not be empty")
 		}
 
 		password := values.Get("password")
@@ -287,13 +289,12 @@ func (s *SystemTable) GetManagerTable(ctx *context.Context) (managerTable Table)
 		}
 
 		_, txErr := s.connection().WithTransaction(func(tx *sql.Tx) (e error, i map[string]interface{}) {
-			user, createUserErr := models.User("users").WithTx(tx).SetConn(s.conn).New(values.Get("username"),
-				encodePassword([]byte(values.Get("password"))),
-				values.Get("name"),
-				values.Get("avatar"))
+			user, createUserErr := models.User("users").WithTx(tx).SetConn(s.conn).New(values.Get("userid"), values.Get("username"),
+				values.Get("phone"), values.Get("email"), EncodePassword([]byte(values.Get("password"))), values.Get("pictureURL"))
 			if db.CheckError(createUserErr, db.INSERT) {
 				return createUserErr, nil
 			}
+
 			// 新增角色、權限
 			for i := 0; i < len(values["role_id[]"]); i++ {
 				_, addRoleErr := user.WithTx(tx).AddRole(values["role_id[]"][i])
@@ -315,19 +316,11 @@ func (s *SystemTable) GetManagerTable(ctx *context.Context) (managerTable Table)
 	// 處理細節函式
 	detail := managerTable.GetDetail()
 	detail.AddField("ID", "id", db.Int)
-	detail.AddField("用戶名稱", "username", db.Varchar)
-	detail.AddField("頭像", "avatar", db.Varchar).
-		FieldDisplay(func(model types.FieldModel) interface{} {
-			if model.Value == "" || config.GetStore().Prefix == "" {
-				model.Value = config.Url("/assets/dist/img/avatar04.png")
-			} else {
-				model.Value = config.GetStore().URL(model.Value)
-			}
-			return template.Default().Image().
-				SetSrc(template.HTML(model.Value)).
-				SetHeight("120").SetWidth("120").WithModal().GetContent()
-		})
-	detail.AddField("暱稱", "name", db.Varchar)
+	detail.AddField("userID", "userid", db.Varchar)
+	detail.AddField("使用者名稱", "username", db.Varchar)
+	detail.AddField("電話號碼", "phone", db.Varchar)
+	detail.AddField("信箱", "email", db.Varchar)
+	detail.AddField("用戶照片", "pictureURL", db.Varchar)
 	detail.AddField("角色", "roles", db.Varchar).
 		FieldDisplay(func(model types.FieldModel) interface{} {
 			labelModels, _ := s.table("role_users").
@@ -743,40 +736,40 @@ func (s *SystemTable) GetMenuTable(ctx *context.Context) (menuTable Table) {
 	formList := menuTable.GetForm().AddXssJsFilter()
 	formList.AddField("ID", "id", db.Int, form.Default).FieldNotAllowEdit().FieldNotAllowAdd()
 	formList.AddField("父級", "parent_id", db.Int, form.SelectSingle).
-	FieldOptions(parentIDOptions).
-	FieldDisplay(func(model types.FieldModel) interface{} {
-		var menuItem []string
-		if model.ID == "" {
-			return menuItem
-		}
+		FieldOptions(parentIDOptions).
+		FieldDisplay(func(model types.FieldModel) interface{} {
+			var menuItem []string
+			if model.ID == "" {
+				return menuItem
+			}
 
-		menuModel, _ := s.table("menu").Select("parent_id").Find(model.ID)
-		menuItem = append(menuItem, strconv.FormatInt(menuModel["parent_id"].(int64), 10))
-		return menuItem
-	})
+			menuModel, _ := s.table("menu").Select("parent_id").Find(model.ID)
+			menuItem = append(menuItem, strconv.FormatInt(menuModel["parent_id"].(int64), 10))
+			return menuItem
+		})
 	formList.AddField("menu名", "title", db.Varchar, form.Text).FieldMust()
 	formList.AddField("標頭", "header", db.Varchar, form.Text)
 	formList.AddField("圖標", "icon", db.Varchar, form.IconPicker)
 	formList.AddField("路徑", "uri", db.Varchar, form.Text)
 	// 角色選項
 	formList.AddField("角色", "roles", db.Int, form.Select).
-	FieldOptionsFromTable("roles", "slug", "id").
-	FieldDisplay(func(model types.FieldModel) interface{} {
-		var roles []string
-		if model.ID == "" {
+		FieldOptionsFromTable("roles", "slug", "id").
+		FieldDisplay(func(model types.FieldModel) interface{} {
+			var roles []string
+			if model.ID == "" {
+				return roles
+			}
+
+			roleModel, _ := s.table("role_menu").
+				Select("role_id").
+				Where("menu_id", "=", model.ID).
+				All()
+
+			for _, v := range roleModel {
+				roles = append(roles, strconv.FormatInt(v["role_id"].(int64), 10))
+			}
 			return roles
-		}
-
-		roleModel, _ := s.table("role_menu").
-			Select("role_id").
-			Where("menu_id", "=", model.ID).
-			All()
-
-		for _, v := range roleModel {
-			roles = append(roles, strconv.FormatInt(v["role_id"].(int64), 10))
-		}
-		return roles
-	})
+		})
 	formList.AddField("更新時間", "updated_at", db.Timestamp, form.Default).FieldNotAllowAdd()
 	formList.AddField("建立時間", "created_at", db.Timestamp, form.Default).FieldNotAllowAdd()
 

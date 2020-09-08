@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"goadminapi/plugins/admin/models"
 	"goadminapi/template/login"
+	"goadminapi/template/signup"
 	"goadminapi/template/types"
 	"html/template"
 	"path"
@@ -42,7 +43,8 @@ var templateMap = make(map[string]Template)
 // Login(struct)屬於Component(interface)所有方法
 var compMap = map[string]Component{
 	// GetLoginComponent設置Login(struct)並回傳
-	"login": login.GetLoginComponent(),
+	"login":  login.GetLoginComponent(),
+	"signup": signup.GetSignupComponent(),
 }
 
 const (

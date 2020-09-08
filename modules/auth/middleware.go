@@ -175,13 +175,7 @@ func GetCurUserByID(id int64, conn db.Connection) (user models.UserModel, ok boo
 		ok = false
 		return
 	}
-	// 判斷是否有頭像
-	// GetStore回傳globalCfg.Store
-	if user.Avatar == "" || config.GetStore().Prefix == "" {
-		user.Avatar = ""
-	} else {
-		user.Avatar = config.GetStore().URL(user.Avatar)
-	}
+
 	// 取得角色、權限及可使用菜單
 	user = user.WithRoles().WithPermissions().WithMenus()
 	// 檢查用戶是否有可訪問的menu

@@ -42,14 +42,14 @@ func Auth(ctx *context.Context) models.UserModel {
 }
 
 // Check 檢查user密碼是否正確之後取得user的role、permission及可用menu，最後更新資料表(goadmin_users)的密碼值(加密)
-func Check(password string, username string, conn db.Connection) (user models.UserModel, ok bool) {
+func Check(password string, phone string, conn db.Connection) (user models.UserModel, ok bool) {
 
 	// User設置UserModel.Base.TableName(struct)並回傳設置UserModel(struct)
 	// SetConn將參數conn(db.Connection)設置至UserModel.conn(UserModel.Base.Conn)
-	user = models.User("users").SetConn(conn).FindByUserName(username)
+	user = models.User("users").SetConn(conn).FindByPhone(phone)
+
 	// 判斷user是否為空
 	if user.IsEmpty() {
-
 		ok = false
 	} else {
 		// 檢查密碼
