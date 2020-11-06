@@ -27,12 +27,16 @@ func (admin *Admin) initRouter() *Admin {
 		}
 	}
 
+	route.GET("/", admin.handler.Transaction)
+
 	route.GET("/signup", admin.handler.ShowSignup)
 	route.GET(config.GetLoginUrl(), admin.handler.ShowLogin)
 	route.POST("/signup", admin.handler.Signup)
 	route.POST("/signin", admin.handler.Auth)
 
-	
+	// 退費
+	route.GET("/refund", admin.handler.ShowRefund)
+	route.POST("/refund", admin.handler.Refund)
 
 	authRoute := route.Group("/", auth.Middleware(admin.Conn))
 	authRoute.GET("/logout", admin.handler.Logout)
@@ -52,6 +56,11 @@ func (admin *Admin) initRouter() *Admin {
 	authPrefixRoute.POST("/new/:__prefix", admin.guardian.NewForm, admin.handler.NewForm).Name("new")
 	authPrefixRoute.POST("/delete/:__prefix", admin.guardian.Delete, admin.handler.Delete).Name("delete")
 	authPrefixRoute.POST("/edit/:__prefix", admin.guardian.EditForm, admin.handler.EditForm).Name("edit")
+
+	// 功能
+	authRoute.POST("/remove-bg", admin.handler.RemoveBg)
+	// authRoute.POST("/convert-file", admin.handler.ConvertFile)
+	// authRoute.POST("/evaluate", admin.handler.Evaluate)
 
 	admin.App = app
 	return admin

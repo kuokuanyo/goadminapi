@@ -2,7 +2,6 @@ package controller
 
 import (
 	"bytes"
-	"database/sql"
 	template2 "html/template"
 	"strings"
 
@@ -16,6 +15,8 @@ import (
 	"goadminapi/template"
 	"net/http"
 	"net/url"
+
+	"github.com/line/line-bot-sdk-go/linebot"
 )
 
 func (h *Handler) Auth(ctx *context.Context) {
@@ -68,28 +69,27 @@ func (h *Handler) Auth(ctx *context.Context) {
 
 // Signup 註冊POST功能
 func (h *Handler) Signup(ctx *context.Context) {
-	var username, picture string
-	userid := ctx.FormValue("userid")
+	var userid, username, picture string
+	token := ctx.FormValue("token")
 	phone := ctx.FormValue("phone")
 	email := ctx.FormValue("email")
 	password := ctx.FormValue("password")
 	passwordCheck := ctx.FormValue("passwordCheck")
 
-	herokuDb, err := sql.Open("mysql", "be94ad46dfd2c5:0986ac8c@tcp(us-cdbr-east-02.cleardb.com:3306)/heroku_340b0d6567ec671")
-	defer herokuDb.Close()
-	if err != nil {
-		panic(err.Error())
-	}
-	if err := herokuDb.Ping(); err != nil {
-		panic(err)
-	}
+	herokuDb := openHerokuDB(ctx)
 
-	rows, err := herokuDb.Query("SELECT username, pictureURL FROM line WHERE userid=?", userid)
+	rows, err := herokuDb.Query("SELECT userid, username, pictureURL FROM information WHERE linkToken=?", token)
 	if err != nil {
-		panic(err)
+		response.BadRequest(ctx, err.Error())
+		return
 	}
 	for rows.Next() {
-		rows.Scan(&username, &picture)
+		rows.Scan(&userid, &username, &picture)
+	}
+
+	if token == "" {
+		response.BadRequest(ctx, "Missing token value")
+		return
 	}
 
 	if userid == "" || username == "" {
@@ -113,7 +113,7 @@ func (h *Handler) Signup(ctx *context.Context) {
 	}
 
 	if !strings.Contains(email, "gmail") {
-		response.BadRequest(ctx, "Wrong email")
+		response.BadRequest(ctx, "Wrong email(ex: example@gmail.com)")
 		return
 	}
 
@@ -131,20 +131,43 @@ func (h *Handler) Signup(ctx *context.Context) {
 
 	user, err := models.User("users").SetConn(h.conn).New(userid, username, phone, email, table.EncodePassword([]byte(password)), picture)
 	if db.CheckError(err, db.INSERT) {
-		panic(err)
+		response.BadRequest(ctx, err.Error())
+		return
 	}
 
 	_, addRoleErr := user.SetConn(h.conn).AddRole("1")
 	if db.CheckError(addRoleErr, db.INSERT) {
-		panic(err)
+		response.BadRequest(ctx, err.Error())
+		return
 	}
 	_, addPermissionErr := user.SetConn(h.conn).AddPermission("1")
 	if db.CheckError(addPermissionErr, db.INSERT) {
-		panic(err)
+		response.BadRequest(ctx, err.Error())
+		return
 	}
 
-	stmt, _ := herokuDb.Prepare("UPDATE line set remarks = true where userid = ?")
-	stmt.Exec(userid)
+	bot := openLineBot(ctx)
+	if _, err = bot.PushMessage(
+		userid,
+		linebot.NewTextMessage("已將個人資料補齊，請由下列選單選擇想使用的功能!")).
+		Do(); err != nil {
+		response.BadRequest(ctx, err.Error())
+		return
+	}
+
+	stmt, err := herokuDb.Prepare("UPDATE information set phone = ?, email = ? where userid = ?")
+	if err != nil {
+		response.BadRequest(ctx, err.Error())
+		return
+	}
+	stmt.Exec(phone, email, userid)
+
+	stmt, err = herokuDb.Prepare("UPDATE remark set remark = ? where userid = ?")
+	if err != nil {
+		response.BadRequest(ctx, err.Error())
+		return
+	}
+	stmt.Exec("choose functions", userid)
 
 	response.OkWithData(ctx, map[string]interface{}{
 		"url": "/admin/login",

@@ -370,7 +370,6 @@ func menuFormContent(form types.FormAttribute) template2.HTML {
 		GetContent()
 }
 
-
 // 將參數h.services.Get(auth.TokenServiceKey)轉換成TokenService(struct)類別後回傳
 func (h *Handler) authSrv() *auth.TokenService {
 	return auth.GetTokenService(h.services.Get("token_csrf_helper"))

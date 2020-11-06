@@ -42,4 +42,8 @@ var AssetsList = []string{
 	"/dist/js/respond.min.js",
 	"/dist/js/tree.min.e1faf8b7de.js",
 	"/dist/js/treeview.min.7780d3bb0f.js",
+	"/dist/img/dog.png",
+	"/dist/img/dog.jpg",
+	"/dist/remove-bg/RemoveBg-1.jpg",
+	"/dist/remove-bg/RemoveBg-2.jpg",
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"goadminapi/plugins/admin/models"
 	"goadminapi/template/login"
+	"goadminapi/template/refund"
 	"goadminapi/template/signup"
 	"goadminapi/template/types"
 	"html/template"
@@ -45,6 +46,7 @@ var compMap = map[string]Component{
 	// GetLoginComponent設置Login(struct)並回傳
 	"login":  login.GetLoginComponent(),
 	"signup": signup.GetSignupComponent(),
+	"refund": refund.GetRefundComponent(),
 }
 
 const (

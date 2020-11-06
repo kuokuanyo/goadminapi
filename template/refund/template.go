@@ -1,7 +1,7 @@
-package signup
+package refund
 
 // 登入介面HTML語法
-const signupTmpl = `{{define "signup_theme1"}}
+const refundTmpl = `{{define "refund_theme1"}}
     <!DOCTYPE html>
     <!--[if lt IE 7]>
     <html class="no-js lt-ie9 lt-ie8 lt-ie7">
@@ -18,13 +18,13 @@ const signupTmpl = `{{define "signup_theme1"}}
     <head>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
-		<title>註冊</title>
+		<title>退費</title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <link rel="stylesheet" href="{{link .CdnUrl .UrlPrefix "/assets/signup/dist/all.min.css"}}">
+        <link rel="stylesheet" href="{{link .CdnUrl .UrlPrefix "/assets/refund/dist/all.min.css"}}">
 
         <!--[if lt IE 9]>
-        <script src="{{link .CdnUrl .UrlPrefix "/assets/signup/dist/respond.min.js"}}"></script>
+        <script src="{{link .CdnUrl .UrlPrefix "/assets/refund/dist/respond.min.js"}}"></script>
         <![endif]-->
 
     </head>
@@ -33,36 +33,17 @@ const signupTmpl = `{{define "signup_theme1"}}
     <div class="container">
         <div class="row" style="margin-top: 80px;">
             <div class="col-md-4 col-md-offset-4">
-                <form action="##" onsubmit="return false" method="post" id="sign-up-form" class="fh5co-form animate-box"
+                <form action="##" onsubmit="return false" method="post" id="refund-form" class="fh5co-form animate-box"
                       data-animate-effect="fadeIn">
-					<h2>註冊</h2>
+					<h2>申請退費</h2>
                     <div class="form-group">
 						<tr>
-							<label for="phone" class="sr-only">phone</label>
-							<td><input type="tel" class="form-control" id="phone" autocomplete="off" required="required" placeholder="輸入電話號碼" ></td>
+							<label for="reason" class="sr-only">退費原因</label>
+							<td><input type="text" class="form-control" id="reason" autocomplete="off" required="required" placeholder="輸入退費原因" ></td>
 						<tr/>
                     </div>
-					<div class="form-group">
-						<tr>
-							<label for="password" class="sr-only">password</label>
-                        	<td><input type="password" class="form-control" id="password" autocomplete="off" required="required" placeholder="輸入密碼"></td>
-						</tr>
-					</div>
-					<div class="form-group">
-						<tr>
-							<label for="passwordCheck" class="sr-only">passwordCheck</label>
-                        	<td><input type="password" class="form-control" id="passwordCheck" autocomplete="off" required="required" placeholder="再次輸入密碼"></td>
-						</tr>
-					</div>
-					<div class="form-group">
-						<tr>
-							<label for=",
-							" class="sr-only">email</label>
-							<td><input type="email" class="form-control" id="email" autocomplete="off" required="required" placeholder="輸入電子郵件(gmail)"></td>
-						</tr>
-                    </div>
                     <div class="form-group">
-                        <button class="btn btn-primary" onclick="submitData()">註冊</button>
+                        <button class="btn btn-primary" onclick="submitData()">提交</button>
                     </div>
                 </form>
             </div>
@@ -76,25 +57,22 @@ const signupTmpl = `{{define "signup_theme1"}}
         <canvas class="particles-js-canvas-el" width="1606" height="1862" style="width: 100%; height: 100%;"></canvas>
     </div>
 
-    <script src="{{link .CdnUrl .UrlPrefix "/assets/signup/dist/all.min.js"}}"></script>
+    <script src="{{link .CdnUrl .UrlPrefix "/assets/refund/dist/all.min.js"}}"></script>
 
     <script>
         function submitData() {
             $.ajax({
                 dataType: 'json',
                 type: 'POST',
-                url: '{{.UrlPrefix}}/signup',
+                url: '{{.UrlPrefix}}/refund',
                 async: 'true',
                 data: {
-                    'phone': $("#phone").val(),
-					'password': $("#password").val(),
-					'passwordCheck': $("#passwordCheck").val(),
-					'email': $("#email").val(),
-					'token': getQueryVariable("linkToken")
+                    'reason': $("#reason").val(),
+                    'orderID': getQueryVariable("orderID")
                 },
                 success: function (data) {
 					location.href = "http://www.cco.com.tw"
-                    alert("用戶資料已補齊，請關閉頁面，在LINE上使用本公司功能!");
+                    alert("成功提交退費申請並可以關閉此頁面，完成退費後會傳送訊息給您!\n");
                 },
                 error: function (data) {
 					alert(data.responseJSON.msg);

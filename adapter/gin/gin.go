@@ -7,8 +7,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/gin-gonic/gin"
-
 	"goadminapi/adapter"
 	"goadminapi/context"
 	"goadminapi/engine"
@@ -16,6 +14,8 @@ import (
 	"goadminapi/plugins"
 	"goadminapi/plugins/admin/models"
 	"goadminapi/template/types"
+
+	"github.com/gin-gonic/gin"
 )
 
 // Gin 同時也符合adapter.WebFrameWork(interface)

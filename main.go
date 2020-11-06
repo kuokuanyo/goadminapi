@@ -1,10 +1,14 @@
 package main
 
 import (
-	"goadminapi/engine"
 	"goadminapi/modules/config"
+	"log"
+	"net/http"
+
+	"goadminapi/engine"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/acme/autocert"
 
 	_ "goadminapi/adapter/gin"     // 框架引擎
 	_ "goadminapi/themes/adminlte" // 主題
@@ -15,6 +19,8 @@ import (
 
 func main() {
 	r := gin.Default()
+	r.Static("/thumbnail", "./themes/adminlte/resource/assets/dist/thumbnail")
+	r.Static("/original", "./themes/adminlte/resource/assets/dist/original")
 
 	// 設定預設Engine(struct)
 	eng := engine.Default()
@@ -22,14 +28,14 @@ func main() {
 	cfg := config.Config{
 		Databases: config.DatabaseList{
 			"default": {
-				Host:       "139.162.53.127",
-				Port:       "1433",
-				User:       "sa",
-				Pwd:        "CCO@test53383499",
+				Host:       "35.194.236.160",
+				Port:       "3306",
+				User:       "yo",
+				Pwd:        "yo123456",
 				Name:       "gotest",
 				MaxIdleCon: 50,
 				MaxOpenCon: 150,
-				Driver:     "mssql",
+				Driver:     "mysql",
 			},
 		},
 		UrlPrefix: "admin",
@@ -43,5 +49,5 @@ func main() {
 	// 再來將driver加入Engine.Services，初始化所有資料庫連線並啟動引擎
 	_ = eng.AddConfig(cfg).Use(r)
 
-	_ = r.Run(":8080")
+	log.Fatal(http.Serve(autocert.NewListener("hilive.com.tw"), r))
 }
