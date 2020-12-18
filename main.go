@@ -44,7 +44,7 @@ func main() {
 			Prefix: "uploads",
 		},
 	}
-
+	//測試
 	// AddConfig 首先將參數cfg(struct)數值處理後設置至globalCfg，接著設置至Engine.config
 	// 再來將driver加入Engine.Services，初始化所有資料庫連線並啟動引擎
 	_ = eng.AddConfig(cfg).Use(r)
